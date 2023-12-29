@@ -14,7 +14,8 @@ class NaiveShortCodeGenerator(private val length: Int = DEFAULT_CODE_LENGTH) : S
   override fun generate(): ShortCode {
     val uuid = UUID.randomUUID()
     val base64Encoded = uuid.toBase64()
-    return ShortCode(base64Encoded.take(length))
+    val shortCode = ShortCode(base64Encoded.take(length))
+    return shortCode
   }
 
   companion object {
