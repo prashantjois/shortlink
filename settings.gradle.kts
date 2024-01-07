@@ -10,3 +10,5 @@ plugins {
 }
 
 rootProject.name = "shortlink"
+
+include("shortlink-lib")
