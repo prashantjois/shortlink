@@ -1,18 +1,16 @@
 package persistence
 
+import java.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import model.ShortCode
 import model.ShortLink
-import java.time.Clock
 
-/**
- * A very simple in-memory storage for Short Links.
- * Not safe for multiprocess applications.
- */
+/** A very simple in-memory storage for Short Links. Not safe for multiprocess applications. */
 object InMemoryShortLinkStore : ShortLinkStore {
     private val mutex = Mutex()
     private val shortLinksByCode = HashMap<ShortCode, ShortLink>()
+
     override suspend fun save(shortLink: ShortLink) {
         mutex.withLock {
             val shortCode = shortLink.code
