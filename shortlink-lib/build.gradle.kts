@@ -1,7 +1,8 @@
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.9.0"
+  kotlin("jvm") version "1.9.21"
   alias(libs.plugins.ktfmt)
 }
 
@@ -16,6 +17,7 @@ dependencies {
   implementation(libs.log4j.api)
   implementation(libs.log4j.core)
   implementation(libs.log4j.slf4j)
+  implementation(libs.coroutines)
 
   testImplementation(kotlin("test"))
   testImplementation(libs.assertj.core)
@@ -27,6 +29,12 @@ tasks.test {
 
 kotlin {
   jvmToolchain(17)
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+  kotlinOptions {
+    freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+  }
 }
 
 ktfmt {

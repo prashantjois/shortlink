@@ -2,6 +2,7 @@ package manager
 
 import generator.ShortCodeGenerator
 import java.net.URL
+import kotlinx.coroutines.runBlocking
 import model.ShortLink
 import persistence.ShortLinkStore
 
@@ -16,7 +17,7 @@ class RealShortLinkManager(
                 val now = System.currentTimeMillis()
                 val shortLink = ShortLink(url, shortCode, now, expiresAt)
 
-                shortLinkStore.save(shortLink)
+                runBlocking { shortLinkStore.save(shortLink) }
                 break
             } catch (e: ShortLinkStore.DuplicateShortCodeException) {
                 // In case of collision, try again with a new short code
