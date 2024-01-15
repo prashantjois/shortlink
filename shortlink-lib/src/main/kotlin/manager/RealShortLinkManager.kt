@@ -4,6 +4,7 @@ import generator.ShortCodeGenerator
 import java.net.URL
 import java.time.Clock
 import kotlinx.coroutines.runBlocking
+import model.ShortCode
 import model.ShortLink
 import persistence.ShortLinkStore
 
@@ -18,5 +19,9 @@ class RealShortLinkManager(
         val shortLink = ShortLink(url, shortCode, now, expiresAt)
 
         return runBlocking { shortLinkStore.create(shortLink) }
+    }
+
+    override fun get(code: ShortCode): ShortLink? {
+        return runBlocking { shortLinkStore.get(code) }
     }
 }

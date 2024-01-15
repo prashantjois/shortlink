@@ -1,6 +1,7 @@
 package manager
 
 import java.net.URL
+import model.ShortCode
 import model.ShortLink
 
 /**
@@ -19,4 +20,13 @@ interface ShortLinkManager {
      * @return The created [ShortLink] object representing the shortened URL.
      */
     fun create(url: URL, expiresAt: Long? = null): ShortLink
+
+    /**
+     * Retrieves a short link using its unique [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link.
+     * @return The [ShortLink] associated with the provided [ShortCode], or null if the short code
+     *   does not exist or is expired.
+     */
+    fun get(code: ShortCode): ShortLink?
 }
