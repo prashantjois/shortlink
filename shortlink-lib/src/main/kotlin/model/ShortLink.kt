@@ -1,6 +1,7 @@
 package model
 
 import java.net.URL
+import java.time.Clock
 
 data class ShortLink(
     /** The URL we are encoding into the short code */
@@ -11,4 +12,9 @@ data class ShortLink(
     val createdAt: Long,
     /** Optional: Timestamp for when this short link expires in epoch milliseconds */
     val expiresAt: Long? = null,
-)
+) {
+    fun doesNotExpire() = expiresAt == null
+
+    context(Clock)
+    fun isExpired() = expiresAt == null || instant().toEpochMilli() > expiresAt
+}

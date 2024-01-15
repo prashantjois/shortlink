@@ -25,10 +25,11 @@ object InMemoryShortLinkStore : ShortLinkStore {
     override suspend fun get(shortCode: ShortCode, excludeExpired: Boolean): ShortLink? {
         val shortLink = shortLinksByCode[shortCode] ?: return null
 
-        shortLink.expiresAt?.let { expiresAt ->
-            if (instant().toEpochMilli() > expiresAt) return null
-        }
+        if (!excludeExpired || shortLink.doesNotExpire()) return shortLink
 
-        return shortLink
+        return when (shortLink.isExpired()) {
+            true -> null
+            false -> shortLink
+        }
     }
 }

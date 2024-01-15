@@ -65,4 +65,22 @@ class InMemoryShortLinkStoreTest {
             assertThat(InMemoryShortLinkStore.get(shortLink.code)).isNull()
         }
     }
+
+    @Test
+    fun `get() should return the shortlink if it is expired but excludeExpired is false`() =
+        runTest {
+            with(TestClock()) {
+                val shortLink =
+                    ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
+
+                InMemoryShortLinkStore.save(shortLink)
+
+                advanceClockBy(6.minutes)
+
+                assertThat(InMemoryShortLinkStore.get(shortLink.code)).isNull()
+
+                assertThat(InMemoryShortLinkStore.get(shortLink.code, excludeExpired = false))
+                    .isNotNull
+            }
+        }
 }
