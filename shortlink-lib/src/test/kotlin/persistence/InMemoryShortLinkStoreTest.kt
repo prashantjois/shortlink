@@ -10,13 +10,15 @@ import testhelpers.clock.TestClock
 import testhelpers.factory.ShortLinkFactory
 
 class InMemoryShortLinkStoreTest {
+    private val inMemoryShortLinkStore = InMemoryShortLinkStore()
+
     @Test
     fun `shortlink should be saved`() = runTest {
         with(TestClock()) {
             val shortLink = ShortLinkFactory.build()
-            InMemoryShortLinkStore.save(shortLink)
+            inMemoryShortLinkStore.create(shortLink)
 
-            assertThat(InMemoryShortLinkStore.get(shortLink.code)).isNotNull
+            assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNotNull
         }
     }
 
@@ -26,7 +28,7 @@ class InMemoryShortLinkStoreTest {
             val shortLink = ShortLinkFactory.build()
             var exception: DuplicateShortCodeException? = null
             try {
-                repeat(2) { InMemoryShortLinkStore.save(shortLink) }
+                repeat(2) { inMemoryShortLinkStore.create(shortLink) }
             } catch (e: DuplicateShortCodeException) {
                 exception = e
             }
@@ -38,9 +40,9 @@ class InMemoryShortLinkStoreTest {
         with(TestClock()) {
             val shortLink = ShortLinkFactory.build()
 
-            InMemoryShortLinkStore.save(shortLink)
+            inMemoryShortLinkStore.create(shortLink)
 
-            with(InMemoryShortLinkStore.get(shortLink.code)!!) {
+            with(inMemoryShortLinkStore.get(shortLink.code)!!) {
                 assertThat(url).isEqualTo(shortLink.url)
                 assertThat(code).isEqualTo(shortLink.code)
                 assertThat(createdAt).isEqualTo(shortLink.createdAt)
@@ -54,15 +56,15 @@ class InMemoryShortLinkStoreTest {
         with(TestClock()) {
             val shortLink = ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
 
-            InMemoryShortLinkStore.save(shortLink)
+            inMemoryShortLinkStore.create(shortLink)
 
             advanceClockBy(5.minutes)
 
-            assertThat(InMemoryShortLinkStore.get(shortLink.code)).isNotNull
+            assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNotNull
 
             advanceClockBy(1.seconds)
 
-            assertThat(InMemoryShortLinkStore.get(shortLink.code)).isNull()
+            assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNull()
         }
     }
 
@@ -73,13 +75,13 @@ class InMemoryShortLinkStoreTest {
                 val shortLink =
                     ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
 
-                InMemoryShortLinkStore.save(shortLink)
+                inMemoryShortLinkStore.create(shortLink)
 
                 advanceClockBy(6.minutes)
 
-                assertThat(InMemoryShortLinkStore.get(shortLink.code)).isNull()
+                assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNull()
 
-                assertThat(InMemoryShortLinkStore.get(shortLink.code, excludeExpired = false))
+                assertThat(inMemoryShortLinkStore.get(shortLink.code, excludeExpired = false))
                     .isNotNull
             }
         }

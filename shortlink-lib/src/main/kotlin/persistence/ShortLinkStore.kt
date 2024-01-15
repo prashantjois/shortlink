@@ -7,9 +7,9 @@ import model.ShortLink
 interface ShortLinkStore {
     /**
      * Persists the given [shortLink] in a thread-safe manner. Throws [DuplicateShortCodeException]
-     * contention is detected.
+     * if an entry already exists with the given [ShortLink.code]
      */
-    suspend fun save(shortLink: ShortLink)
+    suspend fun create(shortLink: ShortLink): ShortLink
 
     /**
      * Retrieves the [ShortLink] associated with the given [shortCode]. Returns null if no

@@ -7,17 +7,18 @@ import model.ShortCode
 import model.ShortLink
 
 /** A very simple in-memory storage for Short Links. Not safe for multiprocess applications. */
-object InMemoryShortLinkStore : ShortLinkStore {
+class InMemoryShortLinkStore : ShortLinkStore {
     private val mutex = Mutex()
     private val shortLinksByCode = HashMap<ShortCode, ShortLink>()
 
-    override suspend fun save(shortLink: ShortLink) {
+    override suspend fun create(shortLink: ShortLink): ShortLink {
         mutex.withLock {
             val shortCode = shortLink.code
             if (shortLinksByCode.containsKey(shortCode)) {
                 throw ShortLinkStore.DuplicateShortCodeException(shortCode.code)
             }
             shortLinksByCode[shortCode] = shortLink
+            return shortLink
         }
     }
 

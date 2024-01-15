@@ -27,5 +27,5 @@ class TestClock(
         return this
     }
 
-    fun Duration.fromNow() = offset(self, toJavaDuration()).instant()
+    fun Duration.fromNow(): Instant = offset(self, toJavaDuration()).instant()
 }

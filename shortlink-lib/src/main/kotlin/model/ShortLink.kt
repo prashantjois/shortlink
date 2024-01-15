@@ -16,5 +16,5 @@ data class ShortLink(
     fun doesNotExpire() = expiresAt == null
 
     context(Clock)
-    fun isExpired() = expiresAt == null || instant().toEpochMilli() > expiresAt
+    fun isExpired() = expiresAt != null && instant().toEpochMilli() > expiresAt
 }
