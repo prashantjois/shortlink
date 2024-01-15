@@ -13,7 +13,6 @@ import util.Encoding.toBase64
  * Here are the chances of collision of various code lengths using base 64 encoding up to a code
  * length of 7 (which typically what we consider sufficiently large to be inexhaustible for
  * practical purposes):
- *
  * ```
  * |-------------|:-----------------:|:---------------------|:------------------|:-----------------------------------------|
  * | Code Length |   Possibilities   | Half-life (1000 RPS) | Half-life (1 RPS) | Approx. Chance of Collision at half-life |
