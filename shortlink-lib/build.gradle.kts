@@ -6,7 +6,7 @@ plugins {
   alias(libs.plugins.ktfmt)
 }
 
-group = "ca.jois"
+group = "com.shortlink"
 version = "1.0-SNAPSHOT"
 
 repositories {
