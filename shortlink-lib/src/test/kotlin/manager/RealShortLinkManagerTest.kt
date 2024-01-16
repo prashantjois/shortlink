@@ -13,6 +13,7 @@ import persistence.InMemoryShortLinkStore
 import testhelpers.clock.TestClock
 import testhelpers.factory.ShortLinkFactory
 import testhelpers.factory.UrlFactory
+import kotlin.math.exp
 
 class RealShortLinkManagerTest {
     @Nested
@@ -87,6 +88,47 @@ class RealShortLinkManagerTest {
                 advanceClockBy(6.minutes)
 
                 assertThat(realShortLinkManager.get(shortLink.code)).isNull()
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("RealShortLinkManager#update")
+    inner class UpdateUrlTest {
+        private val clock = TestClock()
+        private val shortLinkStore = InMemoryShortLinkStore()
+        private lateinit var realShortLinkManager: RealShortLinkManager
+
+        @BeforeEach
+        fun setup() {
+            with(clock) {
+                realShortLinkManager =
+                    RealShortLinkManager(
+                        shortCodeGenerator = NaiveShortCodeGenerator(),
+                        shortLinkStore = shortLinkStore
+                    )
+            }
+        }
+
+        @Test
+        fun `it should update an existing short link`() = runTest {
+            with(clock) {
+                val shortLink = ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
+                val code = shortLink.code
+                shortLinkStore.create(shortLink)
+
+                val newUrl = UrlFactory.random()
+
+                realShortLinkManager.update(code, url = newUrl)
+
+                shortLinkStore.get(code)!!.let {
+                    assertThat(it.url).isEqualTo(newUrl)
+                }
+
+                val newExpiry = 6.minutes.fromNow().toEpochMilli()
+                realShortLinkManager.update(code, expiresAt = newExpiry).let {
+                    assertThat(it.expiresAt).isEqualTo(newExpiry)
+                }
             }
         }
     }
