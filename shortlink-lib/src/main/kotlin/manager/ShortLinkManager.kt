@@ -29,4 +29,23 @@ interface ShortLinkManager {
      *   does not exist or is expired.
      */
     fun get(code: ShortCode): ShortLink?
+
+    /**
+     * Updates the URL associated with the provided [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link to be updated.
+     * @param url The new URL the code should point to
+     * @return The updated [ShortLink] object.
+     */
+    fun update(code: ShortCode, url: URL): ShortLink
+
+    /**
+     * Updates the expirty associated with the provided [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link to be updated.
+     * @param expiresAt A new expiration timestamp for the short link (in milliseconds since epoch).
+     *   If null, updates the code to not expire.
+     * @return The updated [ShortLink] object.
+     */
+    fun update(code: ShortCode, expiresAt: Long?): ShortLink
 }

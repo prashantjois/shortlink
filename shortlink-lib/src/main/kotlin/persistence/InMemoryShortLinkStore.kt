@@ -13,24 +13,38 @@ class InMemoryShortLinkStore : ShortLinkStore {
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
         mutex.withLock {
-            val shortCode = shortLink.code
-            if (shortLinksByCode.containsKey(shortCode)) {
-                throw ShortLinkStore.DuplicateShortCodeException(shortCode.code)
+            val code = shortLink.code
+            if (shortLinksByCode.containsKey(code)) {
+                throw ShortLinkStore.DuplicateShortCodeException(code.code)
             }
-            shortLinksByCode[shortCode] = shortLink
+            shortLinksByCode[code] = shortLink
             return shortLink
         }
     }
 
     context(Clock)
-    override suspend fun get(shortCode: ShortCode, excludeExpired: Boolean): ShortLink? {
-        val shortLink = shortLinksByCode[shortCode] ?: return null
+    override suspend fun get(code: ShortCode, excludeExpired: Boolean): ShortLink? {
+        val shortLink = shortLinksByCode[code] ?: return null
 
         if (!excludeExpired || shortLink.doesNotExpire()) return shortLink
 
         return when (shortLink.isExpired()) {
             true -> null
             false -> shortLink
+        }
+    }
+
+    override suspend fun update(code: ShortCode, modify: (ShortLink) -> ShortLink): ShortLink {
+        return mutex.withLock {
+            val shortLink = shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
+            val modifiedShortLink = modify(shortLink)
+
+            if (modifiedShortLink.code != code) {
+                throw ShortLinkStore.IllegalUpdateException(code, modifiedShortLink.code)
+            }
+
+            shortLinksByCode[code] = modifiedShortLink
+            modifiedShortLink
         }
     }
 }

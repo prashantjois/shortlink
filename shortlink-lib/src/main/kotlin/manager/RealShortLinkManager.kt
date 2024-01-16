@@ -24,4 +24,12 @@ class RealShortLinkManager(
     override fun get(code: ShortCode): ShortLink? {
         return runBlocking { shortLinkStore.get(code) }
     }
+
+    override fun update(code: ShortCode, url: URL): ShortLink {
+        return runBlocking { shortLinkStore.update(code) { it.copy(url = url) } }
+    }
+
+    override fun update(code: ShortCode, expiresAt: Long?): ShortLink {
+        return runBlocking { shortLinkStore.update(code) { it.copy(expiresAt = expiresAt) } }
+    }
 }

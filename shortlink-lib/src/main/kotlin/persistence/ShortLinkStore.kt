@@ -6,21 +6,40 @@ import model.ShortLink
 
 interface ShortLinkStore {
     /**
-     * Persists the given [shortLink] in a thread-safe manner. Throws [DuplicateShortCodeException]
-     * if an entry already exists with the given [ShortLink.code]
+     * Persists the given [shortLink] in a thread-safe manner.
+     *
+     * @throws [DuplicateShortCodeException] if an entry already exists with the given
+     *   [ShortLink.code]
      */
     suspend fun create(shortLink: ShortLink): ShortLink
 
     /**
-     * Retrieves the [ShortLink] associated with the given [shortCode]. Returns null if no
-     * [ShortLink] is associated to the code, or if the [ShortLink] entry is expired.
+     * Retrieves the [ShortLink] associated with the given [code]. Returns null if no [ShortLink] is
+     * associated to the code, or if the [ShortLink] entry is expired.
      *
-     * @param shortCode The short code used to reference the short link
+     * @param code The short code used to reference the short link
      * @param excludeExpired Return null if a matching entry exists but is expired
      */
     context(Clock)
-    suspend fun get(shortCode: ShortCode, excludeExpired: Boolean = true): ShortLink?
+    suspend fun get(code: ShortCode, excludeExpired: Boolean = true): ShortLink?
+
+    /**
+     * Updates the [ShortLink] associated with the provided [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link to be updated.
+     * @param modify Callback to modify the existing [ShortLink] object
+     * @return The updated [ShortLink] object.
+     */
+    suspend fun update(code: ShortCode, modify: (existing: ShortLink) -> ShortLink): ShortLink
 
     class DuplicateShortCodeException(code: String) :
         RuntimeException("Link with code $code already exists")
+
+    class NotFoundException(code: ShortCode) :
+        RuntimeException("ShortLink with code $code not found.")
+
+    class IllegalUpdateException(code: ShortCode, newCode: ShortCode) :
+        RuntimeException(
+            "Attempt to update ShortLink with code $code to new code $newCode not allowed."
+        )
 }
