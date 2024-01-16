@@ -5,6 +5,7 @@ dependencyResolutionManagement {
             version("assertj", "3.11.1")
             version("ktfmt", "0.16.0")
             version("coroutines", "1.8.0-RC2")
+            version("armeria", "1.26.4")
 
             plugin("ktfmt", "com.ncorti.ktfmt.gradle").versionRef("ktfmt")
 
@@ -14,6 +15,7 @@ dependencyResolutionManagement {
             library("log4j-slf4j", "org.apache.logging.log4j", "log4j-slf4j-impl").versionRef("log4j")
             library("coroutines", "org.jetbrains.kotlinx", "kotlinx-coroutines-core").versionRef("coroutines")
             library("coroutines-test", "org.jetbrains.kotlinx", "kotlinx-coroutines-test").versionRef("coroutines")
+            library("armeria", "com.linecorp.armeria", "armeria").versionRef("armeria")
         }
     }
 }
