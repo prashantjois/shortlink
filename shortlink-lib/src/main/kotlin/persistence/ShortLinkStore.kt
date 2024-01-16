@@ -32,6 +32,14 @@ interface ShortLinkStore {
      */
     suspend fun update(code: ShortCode, modify: (existing: ShortLink) -> ShortLink): ShortLink
 
+    /**
+     * Deletes a short link using its unique [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link to be deleted.
+     * @throws NotFoundException if the specified short code does not exist.
+     */
+    suspend fun delete(code: ShortCode)
+
     class DuplicateShortCodeException(code: String) :
         RuntimeException("Link with code $code already exists")
 

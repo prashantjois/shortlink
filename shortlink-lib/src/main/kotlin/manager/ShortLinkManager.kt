@@ -48,4 +48,11 @@ interface ShortLinkManager {
      * @return The updated [ShortLink] object.
      */
     fun update(code: ShortCode, expiresAt: Long?): ShortLink
+
+    /**
+     * Deletes a short link using its unique [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link to be deleted.
+     */
+    fun delete(code: ShortCode)
 }

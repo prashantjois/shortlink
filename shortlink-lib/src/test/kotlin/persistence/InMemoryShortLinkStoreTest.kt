@@ -178,4 +178,39 @@ class InMemoryShortLinkStoreTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("InMemoryShortLinkStore#delete")
+    inner class DeleteTest {
+        @Test
+        fun `Existing entry should be deleted`() = runTest {
+            with(TestClock()) {
+                val shortLink = ShortLinkFactory.build()
+                val code = shortLink.code
+
+                inMemoryShortLinkStore.create(shortLink)
+
+                inMemoryShortLinkStore.get(code).let {
+                    assertThat(it).isNotNull
+                    assertThat(it).isEqualTo(shortLink)
+                }
+
+                inMemoryShortLinkStore.delete(code)
+
+                assertThat(inMemoryShortLinkStore.get(code)).isNull()
+            }
+        }
+
+        @Test
+        fun `it should throw an exception if the short link doesn't exist`() = runTest {
+            var exception: ShortLinkStore.NotFoundException? = null
+            try {
+                inMemoryShortLinkStore.delete(ShortCode("Missing"))
+            } catch (e: ShortLinkStore.NotFoundException) {
+                exception = e
+            }
+
+            assertThat(exception).isNotNull
+        }
+    }
 }

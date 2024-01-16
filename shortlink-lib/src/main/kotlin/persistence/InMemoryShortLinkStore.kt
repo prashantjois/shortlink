@@ -47,4 +47,11 @@ class InMemoryShortLinkStore : ShortLinkStore {
             modifiedShortLink
         }
     }
+
+    override suspend fun delete(code: ShortCode) {
+        mutex.withLock {
+            shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
+            shortLinksByCode.remove(code)
+        }
+    }
 }

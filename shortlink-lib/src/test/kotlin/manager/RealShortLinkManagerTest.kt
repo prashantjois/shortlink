@@ -13,7 +13,6 @@ import persistence.InMemoryShortLinkStore
 import testhelpers.clock.TestClock
 import testhelpers.factory.ShortLinkFactory
 import testhelpers.factory.UrlFactory
-import kotlin.math.exp
 
 class RealShortLinkManagerTest {
     @Nested
@@ -113,7 +112,8 @@ class RealShortLinkManagerTest {
         @Test
         fun `it should update an existing short link`() = runTest {
             with(clock) {
-                val shortLink = ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
+                val shortLink =
+                    ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
                 val code = shortLink.code
                 shortLinkStore.create(shortLink)
 
@@ -121,14 +121,45 @@ class RealShortLinkManagerTest {
 
                 realShortLinkManager.update(code, url = newUrl)
 
-                shortLinkStore.get(code)!!.let {
-                    assertThat(it.url).isEqualTo(newUrl)
-                }
+                shortLinkStore.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
 
                 val newExpiry = 6.minutes.fromNow().toEpochMilli()
                 realShortLinkManager.update(code, expiresAt = newExpiry).let {
                     assertThat(it.expiresAt).isEqualTo(newExpiry)
                 }
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("RealShortLinkManager#delete")
+    inner class DeleteTest {
+        private val clock = TestClock()
+        private val shortLinkStore = InMemoryShortLinkStore()
+        private lateinit var realShortLinkManager: RealShortLinkManager
+
+        @BeforeEach
+        fun setup() {
+            with(clock) {
+                realShortLinkManager =
+                    RealShortLinkManager(
+                        shortCodeGenerator = NaiveShortCodeGenerator(),
+                        shortLinkStore = shortLinkStore
+                    )
+            }
+        }
+
+        @Test
+        fun `it should delete an existing entry`() = runTest {
+            with(clock) {
+                val shortLink =
+                    ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
+                val code = shortLink.code
+                shortLinkStore.create(shortLink)
+
+                realShortLinkManager.delete(code)
+
+                assertThat(shortLinkStore.get(code)).isNull()
             }
         }
     }
