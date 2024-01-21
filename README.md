@@ -3,7 +3,7 @@
 A simple shortlink generation app.
 
 
-## Development
+## Development Environment
 
 Add a pre-commit hook for code style:
 
@@ -11,3 +11,6 @@ Add a pre-commit hook for code style:
 .hooks/install
 ```
 
+## Development Server
+
+See the [shortlink-app module](shortlink-app/README.md)

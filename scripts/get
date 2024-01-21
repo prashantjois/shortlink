@@ -1,0 +1,5 @@
+#!/bin/bash
+
+curl --request GET 'localhost:8080/shortlinks/get' \
+-H 'Content-Type: application/json' \
+-d "{\"code\":\"$1\"}"

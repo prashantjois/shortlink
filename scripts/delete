@@ -1,0 +1,5 @@
+#!/bin/bash
+
+curl --request DELETE 'localhost:8080/shortlinks/delete' \
+-H 'Content-Type: application/json' \
+-d "{\"code\":\"$1\"}"

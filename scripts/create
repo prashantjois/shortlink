@@ -1,0 +1,5 @@
+#!/bin/bash
+
+curl --request POST 'localhost:8080/shortlinks/create' \
+-H 'Content-Type: application/json' \
+-d '{"url":"https://example.com"}'

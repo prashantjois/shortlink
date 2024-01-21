@@ -15,7 +15,7 @@ class RealShortLinkManager(
 ) : ShortLinkManager {
     override fun create(url: URL, expiresAt: Long?): ShortLink {
         val shortCode = shortCodeGenerator.generate()
-        val now = System.currentTimeMillis()
+        val now = millis()
         val shortLink = ShortLink(url, shortCode, now, expiresAt)
 
         return runBlocking { shortLinkStore.create(shortLink) }

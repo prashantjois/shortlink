@@ -42,7 +42,6 @@ class InMemoryShortLinkStore : ShortLinkStore {
             if (modifiedShortLink.code != code) {
                 throw ShortLinkStore.IllegalUpdateException(code, modifiedShortLink.code)
             }
-
             shortLinksByCode[code] = modifiedShortLink
             modifiedShortLink
         }

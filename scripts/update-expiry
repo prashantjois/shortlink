@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    # Less than two arguments provided, use null
+    value=null
+else
+    # Second argument provided, use it as the value
+    value=$2
+fi
+
+curl --request PUT 'localhost:8080/shortlinks/update/expiry' \
+-H 'Content-Type: application/json' \
+-d "{\"code\": \"$1\", \"expiresAt\":$value}"

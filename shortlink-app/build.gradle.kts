@@ -1,4 +1,5 @@
 import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application
@@ -13,6 +14,15 @@ repositories {
 dependencies {
     implementation(project(":shortlink-lib"))
     implementation(libs.armeria)
+    implementation(libs.moshi)
+    implementation(libs.log4j.api)
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.slf4j)
+
+    testImplementation(kotlin("test"))
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.armeria.junit5)
 }
 
 application {
@@ -21,6 +31,12 @@ application {
 
 kotlin {
     jvmToolchain(17)
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+    }
 }
 
 tasks.test {
