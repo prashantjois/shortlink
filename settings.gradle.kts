@@ -56,4 +56,4 @@ rootProject.name = "shortlink"
 
 include("shortlink-lib")
 include("shortlink-app")
-include("shortlink-jdbc")
+include("shortlink-jdbc-store")
