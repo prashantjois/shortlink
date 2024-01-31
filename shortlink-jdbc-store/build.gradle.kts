@@ -2,7 +2,6 @@ import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    application
     kotlin("jvm") version "1.9.21"
     alias(libs.plugins.ktfmt)
 }
@@ -13,21 +12,26 @@ repositories {
 
 dependencies {
     implementation(project(":shortlink-lib"))
-    implementation(project(":shortlink-in-memory-store"))
-    implementation(libs.armeria)
-    implementation(libs.moshi)
     implementation(libs.log4j.api)
     implementation(libs.log4j.core)
     implementation(libs.log4j.slf4j)
+    implementation(libs.hikari)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.coroutines.test)
-    testImplementation(libs.armeria.junit5)
-}
-
-application {
-    mainClass.set("shortlinkapp.AppKt")
+    testImplementation(libs.hikari)
+    testImplementation(libs.junit5.api)
+    testImplementation(libs.junit5.engine)
+    testImplementation(libs.junit5.params)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit5)
+    testImplementation(libs.testcontainers.mysql)
+    testImplementation(libs.testcontainers.mariadb)
+    testImplementation(libs.testcontainers.postgresql)
+    testRuntimeOnly(libs.jdbc.mysql)
+    testRuntimeOnly(libs.jdbc.postgresql)
+    testRuntimeOnly(libs.jdbc.mariadb)
 }
 
 kotlin {

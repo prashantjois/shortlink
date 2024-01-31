@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/shortlink-app" />
+            <option value="$PROJECT_DIR$/shortlink-in-memory-store" />
             <option value="$PROJECT_DIR$/shortlink-jdbc-store" />
             <option value="$PROJECT_DIR$/shortlink-lib" />
           </set>

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import persistence.InMemoryShortLinkStore
+import testhelpers.FakeShortLinkStore
 import testhelpers.clock.TestClock
 import testhelpers.factory.ShortLinkFactory
 import testhelpers.factory.UrlFactory
@@ -21,7 +21,7 @@ class RealShortLinkManagerTest {
         @Test
         fun `ShortLink is created with the provided params`() = runTest {
             with(TestClock()) {
-                val shortLinkStore = InMemoryShortLinkStore()
+                val shortLinkStore = FakeShortLinkStore()
                 val realShortLinkManager =
                     RealShortLinkManager(
                         shortCodeGenerator = NaiveShortCodeGenerator(),
@@ -43,7 +43,7 @@ class RealShortLinkManagerTest {
     @DisplayName("RealShortLinkManager#get")
     inner class GetTest {
         private val clock = TestClock()
-        private val shortLinkStore = InMemoryShortLinkStore()
+        private val shortLinkStore = FakeShortLinkStore()
         private lateinit var realShortLinkManager: RealShortLinkManager
 
         @BeforeEach
@@ -95,7 +95,7 @@ class RealShortLinkManagerTest {
     @DisplayName("RealShortLinkManager#update")
     inner class UpdateUrlTest {
         private val clock = TestClock()
-        private val shortLinkStore = InMemoryShortLinkStore()
+        private val shortLinkStore = FakeShortLinkStore()
         private lateinit var realShortLinkManager: RealShortLinkManager
 
         @BeforeEach
@@ -135,7 +135,7 @@ class RealShortLinkManagerTest {
     @DisplayName("RealShortLinkManager#delete")
     inner class DeleteTest {
         private val clock = TestClock()
-        private val shortLinkStore = InMemoryShortLinkStore()
+        private val shortLinkStore = FakeShortLinkStore()
         private lateinit var realShortLinkManager: RealShortLinkManager
 
         @BeforeEach

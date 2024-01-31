@@ -2,7 +2,6 @@ import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    application
     kotlin("jvm") version "1.9.21"
     alias(libs.plugins.ktfmt)
 }
@@ -13,21 +12,11 @@ repositories {
 
 dependencies {
     implementation(project(":shortlink-lib"))
-    implementation(project(":shortlink-in-memory-store"))
-    implementation(libs.armeria)
-    implementation(libs.moshi)
-    implementation(libs.log4j.api)
-    implementation(libs.log4j.core)
-    implementation(libs.log4j.slf4j)
+    implementation(libs.coroutines)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.coroutines.test)
-    testImplementation(libs.armeria.junit5)
-}
-
-application {
-    mainClass.set("shortlinkapp.AppKt")
 }
 
 kotlin {
