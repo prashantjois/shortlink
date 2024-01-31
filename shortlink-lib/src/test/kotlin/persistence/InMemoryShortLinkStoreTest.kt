@@ -116,27 +116,12 @@ class InMemoryShortLinkStoreTest {
                 }
 
                 val newUrl = UrlFactory.random()
-                val newCreatedAt = 1.minutes.fromNow().toEpochMilli()
                 val newExpiresAt = 6.minutes.fromNow().toEpochMilli()
 
-                // This is only what the method returns, not necessarily what was persisted
-                inMemoryShortLinkStore
-                    .update(code) {
-                        it.copy(url = newUrl, createdAt = newCreatedAt, expiresAt = newExpiresAt)
-                    }
-                    .let {
-                        assertThat(it.code).isEqualTo(code)
-                        assertThat(it.url).isEqualTo(newUrl)
-                        assertThat(it.createdAt).isEqualTo(newCreatedAt)
-                        assertThat(it.expiresAt).isEqualTo(newExpiresAt)
-                    }
-
-                // This is what was actually persisted, tested separately from what the method
-                // returns
+                inMemoryShortLinkStore.update(code, url = newUrl)
+                inMemoryShortLinkStore.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
+                inMemoryShortLinkStore.update(code, expiresAt = newExpiresAt)
                 inMemoryShortLinkStore.get(code)!!.let {
-                    assertThat(it.code).isEqualTo(code)
-                    assertThat(it.url).isEqualTo(newUrl)
-                    assertThat(it.createdAt).isEqualTo(newCreatedAt)
                     assertThat(it.expiresAt).isEqualTo(newExpiresAt)
                 }
             }
@@ -146,36 +131,12 @@ class InMemoryShortLinkStoreTest {
         fun `An exception should be thrown if the code does not exist`() = runTest {
             var exception: ShortLinkStore.NotFoundException? = null
             try {
-                inMemoryShortLinkStore.update(ShortCode("Something")) { it }
+                inMemoryShortLinkStore.update(ShortCode("Something"), url = UrlFactory.random())
             } catch (e: ShortLinkStore.NotFoundException) {
                 exception = e
             }
 
             assertThat(exception).isNotNull()
-        }
-
-        @Test
-        fun `An exception should be thrown if the code is changed`() = runTest {
-            with(TestClock()) {
-                val shortLink = ShortLinkFactory.build()
-                val code = shortLink.code
-
-                inMemoryShortLinkStore.create(shortLink)
-
-                inMemoryShortLinkStore.get(code).let {
-                    assertThat(it).isNotNull
-                    assertThat(it).isEqualTo(shortLink)
-                }
-
-                var exception: ShortLinkStore.IllegalUpdateException? = null
-                try {
-                    inMemoryShortLinkStore.update(code) { it.copy(code = ShortCode("New")) }
-                } catch (e: ShortLinkStore.IllegalUpdateException) {
-                    exception = e
-                }
-
-                assertThat(exception).isNotNull()
-            }
         }
     }
 

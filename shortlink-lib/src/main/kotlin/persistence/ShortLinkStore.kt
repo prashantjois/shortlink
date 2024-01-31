@@ -1,5 +1,6 @@
 package persistence
 
+import java.net.URL
 import java.time.Clock
 import model.ShortCode
 import model.ShortLink
@@ -24,13 +25,24 @@ interface ShortLinkStore {
     suspend fun get(code: ShortCode, excludeExpired: Boolean = true): ShortLink?
 
     /**
-     * Updates the [ShortLink] associated with the provided [ShortCode].
+     * Updates the URL associated with the provided [ShortCode].
      *
      * @param code The [ShortCode] representing the short link to be updated.
-     * @param modify Callback to modify the existing [ShortLink] object
-     * @return The updated [ShortLink] object.
+     * @param url The new URL the code should point to
+     * @throws NotFoundException if the specified short code does not exist.
      */
-    suspend fun update(code: ShortCode, modify: (existing: ShortLink) -> ShortLink): ShortLink
+    suspend fun update(code: ShortCode, url: URL)
+
+    /**
+     * Updates the expiry associated with the provided [ShortCode].
+     *
+     * @param code The [ShortCode] representing the short link to be updated.
+     * @param expiresAt A new expiration timestamp for the short link (in milliseconds since epoch).
+     *   If null, updates the code to not expire.
+     * @return The updated [ShortLink] object.
+     * @throws NotFoundException if the specified short code does not exist.
+     */
+    suspend fun update(code: ShortCode, expiresAt: Long?)
 
     /**
      * Deletes a short link using its unique [ShortCode].
@@ -45,9 +57,4 @@ interface ShortLinkStore {
 
     class NotFoundException(code: ShortCode) :
         RuntimeException("ShortLink with code $code not found.")
-
-    class IllegalUpdateException(code: ShortCode, newCode: ShortCode) :
-        RuntimeException(
-            "Attempt to update ShortLink with code $code to new code $newCode not allowed."
-        )
 }

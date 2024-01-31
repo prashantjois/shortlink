@@ -40,7 +40,7 @@ interface ShortLinkManager {
     fun update(code: ShortCode, url: URL): ShortLink
 
     /**
-     * Updates the expirty associated with the provided [ShortCode].
+     * Updates the expiry associated with the provided [ShortCode].
      *
      * @param code The [ShortCode] representing the short link to be updated.
      * @param expiresAt A new expiration timestamp for the short link (in milliseconds since epoch).

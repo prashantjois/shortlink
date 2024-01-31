@@ -21,19 +21,17 @@ class RealShortLinkManager(
         return runBlocking { shortLinkStore.create(shortLink) }
     }
 
-    override fun get(code: ShortCode): ShortLink? {
-        return runBlocking { shortLinkStore.get(code) }
+    override fun get(code: ShortCode) = runBlocking { shortLinkStore.get(code) }
+
+    override fun update(code: ShortCode, url: URL) = runBlocking {
+        shortLinkStore.update(code, url)
+        shortLinkStore.get(code)!!
     }
 
-    override fun update(code: ShortCode, url: URL): ShortLink {
-        return runBlocking { shortLinkStore.update(code) { it.copy(url = url) } }
+    override fun update(code: ShortCode, expiresAt: Long?) = runBlocking {
+        shortLinkStore.update(code, expiresAt)
+        shortLinkStore.get(code)!!
     }
 
-    override fun update(code: ShortCode, expiresAt: Long?): ShortLink {
-        return runBlocking { shortLinkStore.update(code) { it.copy(expiresAt = expiresAt) } }
-    }
-
-    override fun delete(code: ShortCode) {
-        return runBlocking { shortLinkStore.delete(code) }
-    }
+    override fun delete(code: ShortCode) = runBlocking { shortLinkStore.delete(code) }
 }

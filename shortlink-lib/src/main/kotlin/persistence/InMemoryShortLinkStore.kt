@@ -1,5 +1,6 @@
 package persistence
 
+import java.net.URL
 import java.time.Clock
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -34,23 +35,28 @@ class InMemoryShortLinkStore : ShortLinkStore {
         }
     }
 
-    override suspend fun update(code: ShortCode, modify: (ShortLink) -> ShortLink): ShortLink {
-        return mutex.withLock {
-            val shortLink = shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
-            val modifiedShortLink = modify(shortLink)
+    override suspend fun update(code: ShortCode, url: URL) {
+        update(code) { it.copy(url = url) }
+    }
 
-            if (modifiedShortLink.code != code) {
-                throw ShortLinkStore.IllegalUpdateException(code, modifiedShortLink.code)
-            }
-            shortLinksByCode[code] = modifiedShortLink
-            modifiedShortLink
-        }
+    override suspend fun update(code: ShortCode, expiresAt: Long?) {
+        update(code) { it.copy(expiresAt = expiresAt) }
     }
 
     override suspend fun delete(code: ShortCode) {
         mutex.withLock {
             shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
             shortLinksByCode.remove(code)
+        }
+    }
+
+    private suspend fun update(code: ShortCode, modify: (ShortLink) -> ShortLink): ShortLink {
+        return mutex.withLock {
+            val shortLink = shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
+            val modifiedShortLink = modify(shortLink)
+
+            shortLinksByCode[code] = modifiedShortLink
+            modifiedShortLink
         }
     }
 }
