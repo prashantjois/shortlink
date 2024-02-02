@@ -17,15 +17,22 @@ import java.time.Clock
  *
  * Example usage:
  * ```
- * val config = HikariConfig()
- *
- * config.jdbcUrl = "jdbc:postgresql://localhost:5432/dbname"
- * config.username = "username"
- * config.password = "password
- * val shortLinkStore = ShortLinkStoreJdbc(config)
+ * val shortLinkStore = ShortLinkStoreJdbc.configure {
+ *   config.jdbcUrl = "jdbc:postgresql://localhost:5432/dbname"
+ *   config.username = "username"
+ *   config.password = "password
+ * }
  * ```
  */
 class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
+    companion object {
+        fun configure(buildConfig: HikariConfig.() -> Unit): ShortLinkStoreJdbc {
+            val config = HikariConfig()
+            buildConfig(config)
+            return ShortLinkStoreJdbc(config)
+        }
+    }
+
     private val dataSource = HikariDataSource(config)
 
     override suspend fun create(shortLink: ShortLink): ShortLink {

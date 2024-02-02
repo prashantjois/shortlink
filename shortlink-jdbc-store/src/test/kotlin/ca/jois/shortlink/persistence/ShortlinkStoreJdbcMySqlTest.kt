@@ -36,7 +36,8 @@ class ShortlinkStoreJdbcMySqlTest {
                 TestDatabase.postgres("16.1"),
             )
 
-        const val CONTAINER_PROVIDER = "ca.jois.shortlink.persistence.ShortlinkStoreJdbcMySqlTest#provideDatabases"
+        const val CONTAINER_PROVIDER =
+            "ca.jois.shortlink.persistence.ShortlinkStoreJdbcMySqlTest#provideDatabases"
     }
 
     @Nested

@@ -14,11 +14,14 @@ repositories {
 dependencies {
     implementation(project(":shortlink-lib"))
     implementation(project(":shortlink-in-memory-store"))
+    implementation(project(":shortlink-jdbc-store"))
     implementation(libs.armeria)
     implementation(libs.moshi)
     implementation(libs.log4j.api)
     implementation(libs.log4j.core)
     implementation(libs.log4j.slf4j)
+    implementation(libs.hikari)
+    runtimeOnly(libs.jdbc.mysql)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
