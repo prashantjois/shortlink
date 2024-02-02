@@ -13,19 +13,19 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class InMemoryShortLinkStoreTest {
-    private val inMemoryShortLinkStore = InMemoryShortLinkStore()
+class ShortLinkStoreInMemoryTest {
+    private val shortLinkStoreInMemory = ShortLinkStoreInMemory()
 
     @Nested
-    @DisplayName("InMemoryShortLinkStore#create")
+    @DisplayName("ShortLinkStoreInMemory#create")
     inner class CreateTest {
         @Test
         fun `shortlink should be saved`() = runTest {
             with(TestClock()) {
                 val shortLink = ShortLinkFactory.build()
-                inMemoryShortLinkStore.create(shortLink)
+                shortLinkStoreInMemory.create(shortLink)
 
-                assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNotNull
+                assertThat(shortLinkStoreInMemory.get(shortLink.code)).isNotNull
             }
         }
 
@@ -35,7 +35,7 @@ class InMemoryShortLinkStoreTest {
                 val shortLink = ShortLinkFactory.build()
                 var exception: DuplicateShortCodeException? = null
                 try {
-                    repeat(2) { inMemoryShortLinkStore.create(shortLink) }
+                    repeat(2) { shortLinkStoreInMemory.create(shortLink) }
                 } catch (e: DuplicateShortCodeException) {
                     exception = e
                 }
@@ -44,16 +44,16 @@ class InMemoryShortLinkStoreTest {
     }
 
     @Nested
-    @DisplayName("InMemoryShortLinkStore#get")
+    @DisplayName("ShortLinkStoreInMemory#get")
     inner class GetTest {
         @Test
         fun `retrieve a previously created shortlink`() = runTest {
             with(TestClock()) {
                 val shortLink = ShortLinkFactory.build()
 
-                inMemoryShortLinkStore.create(shortLink)
+                shortLinkStoreInMemory.create(shortLink)
 
-                with(inMemoryShortLinkStore.get(shortLink.code)!!) {
+                with(shortLinkStoreInMemory.get(shortLink.code)!!) {
                     assertThat(url).isEqualTo(shortLink.url)
                     assertThat(code).isEqualTo(shortLink.code)
                     assertThat(createdAt).isEqualTo(shortLink.createdAt)
@@ -68,15 +68,15 @@ class InMemoryShortLinkStoreTest {
                 val shortLink =
                     ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
 
-                inMemoryShortLinkStore.create(shortLink)
+                shortLinkStoreInMemory.create(shortLink)
 
                 advanceClockBy(5.minutes)
 
-                assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNotNull
+                assertThat(shortLinkStoreInMemory.get(shortLink.code)).isNotNull
 
                 advanceClockBy(1.seconds)
 
-                assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNull()
+                assertThat(shortLinkStoreInMemory.get(shortLink.code)).isNull()
             }
         }
 
@@ -86,20 +86,20 @@ class InMemoryShortLinkStoreTest {
                 val shortLink =
                     ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
 
-                inMemoryShortLinkStore.create(shortLink)
+                shortLinkStoreInMemory.create(shortLink)
 
                 advanceClockBy(6.minutes)
 
-                assertThat(inMemoryShortLinkStore.get(shortLink.code)).isNull()
+                assertThat(shortLinkStoreInMemory.get(shortLink.code)).isNull()
 
-                assertThat(inMemoryShortLinkStore.get(shortLink.code, excludeExpired = false))
+                assertThat(shortLinkStoreInMemory.get(shortLink.code, excludeExpired = false))
                     .isNotNull
             }
         }
     }
 
     @Nested
-    @DisplayName("InMemoryShortLinkStore#update")
+    @DisplayName("ShortLinkStoreInMemory#update")
     inner class UpdateTest {
         @Test
         fun `Existing entry should be updated with modified parameters`() = runTest {
@@ -108,9 +108,9 @@ class InMemoryShortLinkStoreTest {
                     ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
                 val code = shortLink.code
 
-                inMemoryShortLinkStore.create(shortLink)
+                shortLinkStoreInMemory.create(shortLink)
 
-                inMemoryShortLinkStore.get(code).let {
+                shortLinkStoreInMemory.get(code).let {
                     assertThat(it).isNotNull
                     assertThat(it).isEqualTo(shortLink)
                 }
@@ -118,10 +118,10 @@ class InMemoryShortLinkStoreTest {
                 val newUrl = UrlFactory.random()
                 val newExpiresAt = 6.minutes.fromNow().toEpochMilli()
 
-                inMemoryShortLinkStore.update(code, url = newUrl)
-                inMemoryShortLinkStore.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
-                inMemoryShortLinkStore.update(code, expiresAt = newExpiresAt)
-                inMemoryShortLinkStore.get(code)!!.let {
+                shortLinkStoreInMemory.update(code, url = newUrl)
+                shortLinkStoreInMemory.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
+                shortLinkStoreInMemory.update(code, expiresAt = newExpiresAt)
+                shortLinkStoreInMemory.get(code)!!.let {
                     assertThat(it.expiresAt).isEqualTo(newExpiresAt)
                 }
             }
@@ -131,7 +131,7 @@ class InMemoryShortLinkStoreTest {
         fun `An exception should be thrown if the code does not exist`() = runTest {
             var exception: ShortLinkStore.NotFoundException? = null
             try {
-                inMemoryShortLinkStore.update(ShortCode("Something"), url = UrlFactory.random())
+                shortLinkStoreInMemory.update(ShortCode("Something"), url = UrlFactory.random())
             } catch (e: ShortLinkStore.NotFoundException) {
                 exception = e
             }
@@ -141,7 +141,7 @@ class InMemoryShortLinkStoreTest {
     }
 
     @Nested
-    @DisplayName("InMemoryShortLinkStore#delete")
+    @DisplayName("ShortLinkStoreInMemory#delete")
     inner class DeleteTest {
         @Test
         fun `Existing entry should be deleted`() = runTest {
@@ -149,16 +149,16 @@ class InMemoryShortLinkStoreTest {
                 val shortLink = ShortLinkFactory.build()
                 val code = shortLink.code
 
-                inMemoryShortLinkStore.create(shortLink)
+                shortLinkStoreInMemory.create(shortLink)
 
-                inMemoryShortLinkStore.get(code).let {
+                shortLinkStoreInMemory.get(code).let {
                     assertThat(it).isNotNull
                     assertThat(it).isEqualTo(shortLink)
                 }
 
-                inMemoryShortLinkStore.delete(code)
+                shortLinkStoreInMemory.delete(code)
 
-                assertThat(inMemoryShortLinkStore.get(code)).isNull()
+                assertThat(shortLinkStoreInMemory.get(code)).isNull()
             }
         }
 
@@ -166,7 +166,7 @@ class InMemoryShortLinkStoreTest {
         fun `it should throw an exception if the short link doesn't exist`() = runTest {
             var exception: ShortLinkStore.NotFoundException? = null
             try {
-                inMemoryShortLinkStore.delete(ShortCode("Missing"))
+                shortLinkStoreInMemory.delete(ShortCode("Missing"))
             } catch (e: ShortLinkStore.NotFoundException) {
                 exception = e
             }

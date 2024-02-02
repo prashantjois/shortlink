@@ -55,6 +55,6 @@ plugins {
 rootProject.name = "shortlink"
 
 include("shortlink-lib")
-include("shortlink-in-memory-store")
-include("shortlink-jdbc-store")
+include("shortlink-store-in-memory")
+include("shortlink-store-jdbc")
 include("shortlink-app")

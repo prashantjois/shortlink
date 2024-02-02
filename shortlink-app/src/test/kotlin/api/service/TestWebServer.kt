@@ -4,8 +4,8 @@ import ca.jois.shortlink.generator.NaiveShortCodeGenerator
 import ca.jois.shortlink.generator.ShortCodeGenerator
 import ca.jois.shortlink.manager.RealShortLinkManager
 import ca.jois.shortlink.manager.ShortLinkManager
-import ca.jois.shortlink.persistence.InMemoryShortLinkStore
 import ca.jois.shortlink.persistence.ShortLinkStore
+import ca.jois.shortlink.persistence.ShortLinkStoreInMemory
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpMethod
 import com.linecorp.armeria.common.QueryParams
@@ -61,7 +61,7 @@ class TestWebServer(clock: Clock) : ServerExtension() {
     init {
         with(clock) {
             shortCodeGenerator = NaiveShortCodeGenerator()
-            shortLinkStore = InMemoryShortLinkStore()
+            shortLinkStore = ShortLinkStoreInMemory()
             shortLinkManager =
                 RealShortLinkManager(
                     shortCodeGenerator = shortCodeGenerator,

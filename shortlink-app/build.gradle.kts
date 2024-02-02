@@ -13,8 +13,8 @@ repositories {
 
 dependencies {
     implementation(project(":shortlink-lib"))
-    implementation(project(":shortlink-in-memory-store"))
-    implementation(project(":shortlink-jdbc-store"))
+    implementation(project(":shortlink-store-in-memory"))
+    implementation(project(":shortlink-store-jdbc"))
     implementation(libs.armeria)
     implementation(libs.moshi)
     implementation(libs.log4j.api)
