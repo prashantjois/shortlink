@@ -1,19 +1,19 @@
 package api.service
 
+import ca.jois.shortlink.generator.NaiveShortCodeGenerator
+import ca.jois.shortlink.generator.ShortCodeGenerator
+import ca.jois.shortlink.manager.RealShortLinkManager
+import ca.jois.shortlink.manager.ShortLinkManager
+import ca.jois.shortlink.persistence.InMemoryShortLinkStore
+import ca.jois.shortlink.persistence.ShortLinkStore
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpMethod
 import com.linecorp.armeria.common.QueryParams
 import com.linecorp.armeria.common.RequestHeaders
 import com.linecorp.armeria.server.ServerBuilder
 import com.linecorp.armeria.testing.junit5.server.ServerExtension
-import generator.NaiveShortCodeGenerator
-import generator.ShortCodeGenerator
 import java.time.Clock
 import java.util.*
-import manager.RealShortLinkManager
-import manager.ShortLinkManager
-import persistence.InMemoryShortLinkStore
-import persistence.ShortLinkStore
 import shortlinkapp.api.service.shortlink.ShortLinkService
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction

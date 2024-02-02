@@ -1,10 +1,12 @@
 package api.service.shortlink
 
 import api.service.TestWebServer
+import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.testhelpers.clock.TestClock
+import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import java.net.URL
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.test.runTest
-import model.ShortLink
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -12,8 +14,6 @@ import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
-import testhelpers.clock.TestClock
-import testhelpers.factory.ShortLinkFactory
 
 class ShortLinkServiceTest {
     @Test

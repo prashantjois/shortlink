@@ -1,7 +1,7 @@
 package shortlinkapp.api.service.shortlink.actions
 
-import manager.ShortLinkManager
-import model.ShortCode
+import ca.jois.shortlink.manager.ShortLinkManager
+import ca.jois.shortlink.model.ShortCode
 
 class DeleteShortLinkAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: Request) {

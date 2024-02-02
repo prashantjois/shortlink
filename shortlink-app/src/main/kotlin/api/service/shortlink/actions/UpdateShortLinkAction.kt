@@ -1,9 +1,9 @@
 package shortlinkapp.api.service.shortlink.actions
 
+import ca.jois.shortlink.manager.ShortLinkManager
+import ca.jois.shortlink.model.ShortCode
+import ca.jois.shortlink.model.ShortLink
 import java.net.URL
-import manager.ShortLinkManager
-import model.ShortCode
-import model.ShortLink
 
 class UpdateShortLinkAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: UrlRequest): ShortLink {

@@ -1,17 +1,17 @@
-package persistence
+package ca.jois.shortlink.persistence
 
+import ca.jois.shortlink.model.ShortCode
+import ca.jois.shortlink.persistence.ShortLinkStore.DuplicateShortCodeException
+import ca.jois.shortlink.testhelpers.clock.TestClock
+import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
+import ca.jois.shortlink.testhelpers.factory.UrlFactory
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
-import model.ShortCode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import persistence.ShortLinkStore.DuplicateShortCodeException
-import testhelpers.clock.TestClock
-import testhelpers.factory.ShortLinkFactory
-import testhelpers.factory.UrlFactory
 
 class InMemoryShortLinkStoreTest {
     private val inMemoryShortLinkStore = InMemoryShortLinkStore()

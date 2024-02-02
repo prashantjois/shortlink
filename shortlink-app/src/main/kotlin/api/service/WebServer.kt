@@ -1,20 +1,20 @@
 package shortlinkapp.api.service
 
+import ca.jois.shortlink.generator.NaiveShortCodeGenerator
+import ca.jois.shortlink.generator.ShortCodeGenerator
+import ca.jois.shortlink.manager.RealShortLinkManager
+import ca.jois.shortlink.manager.ShortLinkManager
+import ca.jois.shortlink.persistence.InMemoryShortLinkStore
+import ca.jois.shortlink.persistence.ShortLinkStore
+import ca.jois.shortlink.util.logging.Logging
 import com.linecorp.armeria.server.Server
 import com.linecorp.armeria.server.ServerBuilder
-import generator.NaiveShortCodeGenerator
-import generator.ShortCodeGenerator
 import java.time.Clock
-import manager.RealShortLinkManager
-import manager.ShortLinkManager
-import persistence.InMemoryShortLinkStore
-import persistence.ShortLinkStore
 import shortlinkapp.api.service.shortlink.ShortLinkService
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
-import util.logging.Logging
 
 class WebServer(private val port: Int) {
     private val shortLinkStore: ShortLinkStore

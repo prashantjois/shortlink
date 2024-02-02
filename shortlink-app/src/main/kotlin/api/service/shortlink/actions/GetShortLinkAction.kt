@@ -1,8 +1,8 @@
 package shortlinkapp.api.service.shortlink.actions
 
-import manager.ShortLinkManager
-import model.ShortCode
-import model.ShortLink
+import ca.jois.shortlink.manager.ShortLinkManager
+import ca.jois.shortlink.model.ShortCode
+import ca.jois.shortlink.model.ShortLink
 
 class GetShortLinkAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: Request): ShortLink? {
