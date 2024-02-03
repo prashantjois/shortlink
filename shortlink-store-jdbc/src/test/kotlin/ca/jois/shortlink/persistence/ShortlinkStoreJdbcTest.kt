@@ -22,7 +22,7 @@ import org.testcontainers.containers.JdbcDatabaseContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 
 @Testcontainers
-class ShortlinkStoreJdbcMySqlTest {
+class ShortlinkStoreJdbcTest {
     companion object {
         /**
          * Runs the entire set of tests in this class against a variet of databases to ensure
@@ -41,7 +41,7 @@ class ShortlinkStoreJdbcMySqlTest {
     }
 
     @Nested
-    @DisplayName("JdbcShortLinkStore#create")
+    @DisplayName("ShortLinkStoreJdbc#create")
     inner class CreateTest {
         @ParameterizedTest
         @MethodSource(CONTAINER_PROVIDER)
@@ -73,7 +73,7 @@ class ShortlinkStoreJdbcMySqlTest {
     }
 
     @Nested
-    @DisplayName("JdbcShortLinkStore#get")
+    @DisplayName("ShortLinkStoreJdbc#get")
     inner class GetTest {
         @ParameterizedTest
         @MethodSource(CONTAINER_PROVIDER)
@@ -138,7 +138,7 @@ class ShortlinkStoreJdbcMySqlTest {
     }
 
     @Nested
-    @DisplayName("JdbcShortLinkStore#update")
+    @DisplayName("ShortLinkStoreJdbc#update")
     inner class UpdateTest {
         @ParameterizedTest
         @MethodSource(CONTAINER_PROVIDER)
@@ -187,7 +187,7 @@ class ShortlinkStoreJdbcMySqlTest {
     }
 
     @Nested
-    @DisplayName("JdbcShortLinkStore#delete")
+    @DisplayName("ShortLinkStoreJdbc#delete")
     inner class DeleteTest {
         @ParameterizedTest
         @MethodSource(CONTAINER_PROVIDER)
