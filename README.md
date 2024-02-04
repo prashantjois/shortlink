@@ -20,7 +20,9 @@ You can use a variety of backend systems for persistence, or implement your own.
 
 Existing implementations:
 
-* [JDBC Store](shortlink-jdbc-store)
+* [In-memory Store](shortlink-store-in-memory/README.md)
+* [JDBC Store](shortlink-store-jdbc/README.md)
+* [MongoDB](shortlink-store-mongodb/README.md)
 
 Custom implementations:
 
