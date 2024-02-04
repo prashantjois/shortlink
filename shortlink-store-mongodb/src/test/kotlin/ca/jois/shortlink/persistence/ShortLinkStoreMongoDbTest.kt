@@ -22,13 +22,12 @@ class ShortLinkStoreMongoDbTest : ShortLinkStoreTest {
         get() =
             ShortLinkStoreMongoDb(
                 connectionString = container.getReplicaSetUrl(name),
-                databaseName = name,
-                collectionName = name
+                databaseName = name
             )
 
     override suspend fun getDirect(code: ShortCode): ShortLink? {
         return collection()
-            .find(Document(MongoDbFields.CODE.name, code.code))
+            .find(Document(MongoDbFields.CODE.name, code.value))
             .firstOrNull()
             ?.toShortLink()
     }

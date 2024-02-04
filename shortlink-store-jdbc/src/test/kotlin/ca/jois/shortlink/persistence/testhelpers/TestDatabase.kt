@@ -65,7 +65,7 @@ object TestDatabase {
 
         val connection = HikariDataSource(hikariConfig()).connection
         val stmt: PreparedStatement =
-            connection.prepareStatement(selectSql).apply { setString(1, code.code) }
+            connection.prepareStatement(selectSql).apply { setString(1, code.value) }
 
         stmt.executeQuery().let { rs ->
             if (!rs.next()) {
@@ -100,7 +100,7 @@ object TestDatabase {
         connection
             .prepareStatement(insertSql)
             .apply {
-                setString(1, shortLink.code.code)
+                setString(1, shortLink.code.value)
                 setString(2, shortLink.url.toString())
                 setLong(3, shortLink.createdAt)
                 shortLink.expiresAt?.let { setLong(4, it) } ?: setNull(4, java.sql.Types.BIGINT)

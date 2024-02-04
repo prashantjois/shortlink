@@ -40,7 +40,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
             write(
                 "INSERT INTO shortlinks (code, url, created_at, expires_at) VALUES (?, ?, ?, ?)"
             ) {
-                setString(1, shortLink.code.code)
+                setString(1, shortLink.code.value)
                 setString(2, shortLink.url.toString())
                 setLong(3, shortLink.createdAt)
                 setLongOrNull(4, shortLink.expiresAt)
@@ -52,7 +52,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                 message.contains("Duplicate entry") || // mysql
                     message.contains("duplicate key value violates unique constraint") // postgres
             if (isDuplicate) {
-                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code.code)
+                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code.value)
             }
 
             throw e
@@ -71,7 +71,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
 
         val results =
             read(sql) {
-                setString(1, code.code)
+                setString(1, code.value)
                 if (excludeExpired) {
                     setLong(2, millis())
                 }
@@ -100,7 +100,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
         val numUpdated =
             write("UPDATE shortlinks SET url = ? WHERE code = ?") {
                 setString(1, url.toString())
-                setString(2, code.code)
+                setString(2, code.value)
             }
 
         if (numUpdated == 0) {
@@ -112,7 +112,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
         val numUpdated =
             write("UPDATE shortlinks SET expires_at = ? WHERE code = ?") {
                 setLongOrNull(1, expiresAt)
-                setString(2, code.code)
+                setString(2, code.value)
             }
 
         if (numUpdated == 0) {
@@ -121,7 +121,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     }
 
     override suspend fun delete(code: ShortCode) {
-        val numDeleted = write("DELETE FROM shortlinks WHERE code = ?") { setString(1, code.code) }
+        val numDeleted = write("DELETE FROM shortlinks WHERE code = ?") { setString(1, code.value) }
 
         if (numDeleted == 0) {
             throw ShortLinkStore.NotFoundException(code)
