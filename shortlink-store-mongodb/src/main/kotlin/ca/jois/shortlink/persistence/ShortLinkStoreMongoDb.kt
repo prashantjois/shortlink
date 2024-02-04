@@ -14,24 +14,23 @@ import org.bson.Document
 
 /** An implementation of [ShortlinkStore] that uses MongoDB. */
 class ShortLinkStoreMongoDb(
-    private val connectionString: String,
-    private val databaseName: String,
-    private val collectionName: String,
+    connectionString: String,
+    databaseName: String,
 ) : ShortLinkStore {
     private val client = MongoClients.create(connectionString)
     private val database = client.getDatabase(databaseName)
-    private val collection = database.getCollection(collectionName)
+    private val shortLinksCollection = database.getCollection("shortlinks")
 
     init {
-        collection.createIndex(Document(MongoDbFields.CODE.name, 1), IndexOptions().unique(true))
+        shortLinksCollection.createIndex(Document(MongoDbFields.CODE.name, 1), IndexOptions().unique(true))
     }
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
         try {
-            collection.insertOne(shortLink.toDocument())
+            shortLinksCollection.insertOne(shortLink.toDocument())
         } catch (e: MongoWriteException) {
             if (e.message?.contains("duplicate key error") == true) {
-                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code.code)
+                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code.value)
             }
             throw e
         }
@@ -42,8 +41,8 @@ class ShortLinkStoreMongoDb(
     context(Clock)
     override suspend fun get(code: ShortCode, excludeExpired: Boolean): ShortLink? {
         val shortLink =
-            collection
-                .find(Document(MongoDbFields.CODE.name, code.code))
+            shortLinksCollection
+                .find(Document(MongoDbFields.CODE.name, code.value))
                 .firstOrNull()
                 ?.toShortLink() ?: return null
 
@@ -57,8 +56,8 @@ class ShortLinkStoreMongoDb(
 
     override suspend fun update(code: ShortCode, url: URL) {
         val updateResult =
-            collection.updateOne(
-                eq(MongoDbFields.CODE.name, code.code),
+            shortLinksCollection.updateOne(
+                eq(MongoDbFields.CODE.name, code.value),
                 Document("\$set", Document(MongoDbFields.URL.name, url.toString()))
             )
         if (updateResult.matchedCount == 0L) {
@@ -68,8 +67,8 @@ class ShortLinkStoreMongoDb(
 
     override suspend fun update(code: ShortCode, expiresAt: Long?) {
         val updateResult =
-            collection.updateOne(
-                eq(MongoDbFields.CODE.name, code.code),
+            shortLinksCollection.updateOne(
+                eq(MongoDbFields.CODE.name, code.value),
                 Document("\$set", Document(MongoDbFields.EXPIRES_AT.name, expiresAt))
             )
         if (updateResult.matchedCount == 0L) {
@@ -78,7 +77,7 @@ class ShortLinkStoreMongoDb(
     }
 
     override suspend fun delete(code: ShortCode) {
-        val deleteResult = collection.deleteOne(eq(MongoDbFields.CODE.name, code.code))
+        val deleteResult = shortLinksCollection.deleteOne(eq(MongoDbFields.CODE.name, code.value))
         if (deleteResult.deletedCount == 0L) {
             throw ShortLinkStore.NotFoundException(code)
         }

@@ -13,7 +13,7 @@ fun main() {
     val shortLinkStore = jdbc()
 
     // Uncomment to use MongoDB database server
-    //    val shortLinkStore = mongo()
+    // val shortLinkStore = mongo()
 
     WebServer(port = 8080, shortLinkStore = shortLinkStore).run()
 }
@@ -30,5 +30,4 @@ private fun mongo() =
     ShortLinkStoreMongoDb(
         connectionString = "mongodb://127.0.0.1:27017/shortlinks",
         databaseName = "shortlinks",
-        collectionName = "shortlinks",
     )

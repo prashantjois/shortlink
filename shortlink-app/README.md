@@ -1,7 +1,6 @@
-# ShortLink Development Server
+# ShortLink Web Server
 
-This module allows you to run a local server that allows you to hit various endpoints
-to manage shortlinks.
+This module allows you to run a local server that exposes CRUD APIs to manage shortlinks.
 
 ## Getting Started
 
@@ -9,6 +8,102 @@ To start the server, run the `main()` function in [App.kt](src/main/kotlin/App.k
 
 ## API
 
-See [ShortLinkService](src/main/kotlin/api/service/shortlink/ShortLinkService.kt)
+### POST /create
 
-Scripts to hit the endpoint are given in the [scripts folder](../scripts)
+Request:
+```json
+{
+  "url": "https://example.com"
+}
+```
+
+Response:
+```json
+{
+  "url": "https://example.com",
+  "code": {
+    "value": "JdP0"
+  },
+  "createdAt": 1707072661478
+}
+```
+
+### GET /get
+
+Request:
+```json
+{
+  "code": "JdP0"
+}
+```
+
+Response:
+```json
+{
+  "url": "https://example.com",
+  "code": {
+    "value": "JdP0"
+  },
+  "createdAt": 1707072661478
+}
+```
+
+### PUT /update/url
+
+Request:
+```json
+{
+  "code": "JdP0",
+  "url": "https://example.com/new"
+}
+```
+
+Response:
+```json
+{
+  "url": "https://example.com/new",
+  "code": {
+    "value": "JdP0"
+  },
+  "createdAt": 1707072661478
+}
+```
+
+### PUT /update/expiry
+
+Request:
+```json
+{
+  "code": "JdP0",
+  "expiresAt": 2707072661478
+}
+```
+
+Response:
+```json
+{
+  "url": "https://example.com/",
+  "code": {
+    "value": "JdP0"
+  },
+  "createdAt": 2707072661478
+}
+```
+
+### DELETE /delete
+
+Request:
+```json
+{
+  "code": "JdP0",
+}
+```
+
+Response:
+```json
+{}
+```
+
+### Scripts
+
+Sample scripts that exercise these endpoint are given in the [scripts folder](../scripts)

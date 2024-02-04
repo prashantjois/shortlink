@@ -10,7 +10,7 @@ object ShortLinkMongoDbExtensions {
     fun ShortLink.toDocument() =
         Document(
             mapOf(
-                MongoDbFields.CODE.name to code.code,
+                MongoDbFields.CODE.name to code.value,
                 MongoDbFields.URL.name to url.toString(),
                 MongoDbFields.CREATED_AT.name to createdAt,
                 MongoDbFields.EXPIRES_AT.name to expiresAt,

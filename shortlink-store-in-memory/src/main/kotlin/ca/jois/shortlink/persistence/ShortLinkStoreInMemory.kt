@@ -16,7 +16,7 @@ class ShortLinkStoreInMemory : ShortLinkStore {
         mutex.withLock {
             val code = shortLink.code
             if (shortLinksByCode.containsKey(code)) {
-                throw ShortLinkStore.DuplicateShortCodeException(code.code)
+                throw ShortLinkStore.DuplicateShortCodeException(code.value)
             }
             shortLinksByCode[code] = shortLink
             return shortLink

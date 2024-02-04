@@ -39,7 +39,7 @@ class ShortLinkServiceTest {
                 val newUrl = "https://example.com"
 
                 val request =
-                    UpdateShortLinkAction.UrlRequest(code = shortLink.code.code, url = newUrl)
+                    UpdateShortLinkAction.UrlRequest(code = shortLink.code.value, url = newUrl)
 
                 put<UpdateShortLinkAction.UrlRequest, ShortLink>(request, "/update/url") {
                     assertThat(it!!.url).isEqualTo(URL(newUrl))
@@ -59,7 +59,7 @@ class ShortLinkServiceTest {
 
                 val request =
                     UpdateShortLinkAction.ExpiryRequest(
-                        code = shortLink.code.code,
+                        code = shortLink.code.value,
                         expiresAt = newExpiry
                     )
 
@@ -77,7 +77,7 @@ class ShortLinkServiceTest {
             with(clock) {
                 val shortLink = server.shortLinkStore.create(ShortLinkFactory.build())
 
-                val request = GetShortLinkAction.Request(code = shortLink.code.code)
+                val request = GetShortLinkAction.Request(code = shortLink.code.value)
 
                 get<GetShortLinkAction.Request, ShortLink>(request, "/get") {
                     assertThat(server.shortLinkStore.get(it!!.code)!!).isEqualTo(shortLink)
@@ -92,7 +92,7 @@ class ShortLinkServiceTest {
             with(clock) {
                 val shortLink = server.shortLinkStore.create(ShortLinkFactory.build())
 
-                val request = DeleteShortLinkAction.Request(code = shortLink.code.code)
+                val request = DeleteShortLinkAction.Request(code = shortLink.code.value)
 
                 delete<DeleteShortLinkAction.Request, Unit>(request, "/delete")
                 assertThat(server.shortLinkStore.get(shortLink.code)).isNull()
