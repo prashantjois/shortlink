@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.hikari)
 
     testImplementation(kotlin("test"))
+    testImplementation(project(":shortlink-store-testing"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.hikari)

@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/shortlink-lib" />
             <option value="$PROJECT_DIR$/shortlink-store-in-memory" />
             <option value="$PROJECT_DIR$/shortlink-store-jdbc" />
+            <option value="$PROJECT_DIR$/shortlink-store-testing" />
           </set>
         </option>
       </GradleProjectSettings>

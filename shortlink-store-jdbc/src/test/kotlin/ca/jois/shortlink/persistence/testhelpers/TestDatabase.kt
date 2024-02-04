@@ -50,8 +50,6 @@ object TestDatabase {
     ) {
         container.start()
         try {
-            container.hikariConfig()
-
             test(ShortLinkStoreJdbc(container.hikariConfig()))
         } finally {
             container.stop()
@@ -112,7 +110,7 @@ object TestDatabase {
         return shortLink
     }
 
-    private fun JdbcDatabaseContainer<*>.hikariConfig(): HikariConfig {
+    fun JdbcDatabaseContainer<*>.hikariConfig(): HikariConfig {
         return HikariConfig().also {
             it.jdbcUrl = jdbcUrl
             it.username = username
