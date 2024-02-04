@@ -10,10 +10,10 @@ fun main() {
     //  val shortLinkStore = inMem()
 
     // Uncomment to use MySQL database server
-    //  val shortLinkStore = jdbc()
+    val shortLinkStore = jdbc()
 
     // Uncomment to use MongoDB database server
-    val shortLinkStore = mongo()
+    //    val shortLinkStore = mongo()
 
     WebServer(port = 8080, shortLinkStore = shortLinkStore).run()
 }
