@@ -57,5 +57,6 @@ rootProject.name = "shortlink"
 include("shortlink-lib")
 include("shortlink-store-in-memory")
 include("shortlink-store-jdbc")
+include("shortlink-store-mongodb")
 include("shortlink-store-testing")
 include("shortlink-app")

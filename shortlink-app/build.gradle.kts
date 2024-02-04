@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":shortlink-lib"))
     implementation(project(":shortlink-store-in-memory"))
     implementation(project(":shortlink-store-jdbc"))
+    implementation(project(":shortlink-store-mongodb"))
     implementation(libs.armeria)
     implementation(libs.moshi)
     implementation(libs.log4j.api)
