@@ -15,7 +15,7 @@ import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
 
-class ShortLinkServiceTest {
+class ShortLinkApiServiceTest {
     @Test
     fun `POST#create creates a new shortlink`() = runTest {
         with(server) {

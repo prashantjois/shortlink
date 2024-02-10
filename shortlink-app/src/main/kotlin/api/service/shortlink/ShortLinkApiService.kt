@@ -14,7 +14,7 @@ import shortlinkapp.util.json.adapter.ArmeriaRequestConverter
 import shortlinkapp.util.json.adapter.JsonConverter
 import shortlinkapp.util.json.adapter.UrlAdapter
 
-class ShortLinkService(
+class ShortLinkApiService(
     private val createShortLinkAction: CreateShortLinkAction,
     private val getShortLinkAction: GetShortLinkAction,
     private val updateShortLinkAction: UpdateShortLinkAction,

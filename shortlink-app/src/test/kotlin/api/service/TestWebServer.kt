@@ -14,7 +14,8 @@ import com.linecorp.armeria.server.ServerBuilder
 import com.linecorp.armeria.testing.junit5.server.ServerExtension
 import java.time.Clock
 import java.util.*
-import shortlinkapp.api.service.shortlink.ShortLinkService
+import shortlinkapp.api.service.shortlink.ShortLinkApiService
+import shortlinkapp.api.service.shortlink.ShortLinkRedirectService
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
@@ -55,7 +56,8 @@ class TestWebServer(clock: Clock) : ServerExtension() {
     val getShortLinkAction: GetShortLinkAction
     val updateShortLinkAction: UpdateShortLinkAction
     val deleteShortLinkAction: DeleteShortLinkAction
-    val shortLinkService: ShortLinkService
+    val shortLinkRedirectService: ShortLinkRedirectService
+    val shortLinkApiService: ShortLinkApiService
     val converter = JsonConverter(UrlAdapter())
 
     init {
@@ -71,18 +73,19 @@ class TestWebServer(clock: Clock) : ServerExtension() {
             getShortLinkAction = GetShortLinkAction(shortLinkManager)
             updateShortLinkAction = UpdateShortLinkAction(shortLinkManager)
             deleteShortLinkAction = DeleteShortLinkAction(shortLinkManager)
-            shortLinkService =
-                ShortLinkService(
+            shortLinkApiService =
+                ShortLinkApiService(
                     createShortLinkAction,
                     getShortLinkAction,
                     updateShortLinkAction,
                     deleteShortLinkAction,
                 )
+            shortLinkRedirectService = ShortLinkRedirectService(shortLinkManager)
         }
     }
 
     override fun configure(sb: ServerBuilder) {
-        sb.annotatedService(shortLinkService)
+        sb.annotatedService(shortLinkApiService).annotatedService("/r", shortLinkRedirectService)
     }
 
     inline fun <reified REQ_TYPE, reified RESP_TYPE> post(

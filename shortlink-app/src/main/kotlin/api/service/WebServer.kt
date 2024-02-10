@@ -9,7 +9,8 @@ import ca.jois.shortlink.util.logging.Logging
 import com.linecorp.armeria.server.Server
 import com.linecorp.armeria.server.ServerBuilder
 import java.time.Clock
-import shortlinkapp.api.service.shortlink.ShortLinkService
+import shortlinkapp.api.service.shortlink.ShortLinkApiService
+import shortlinkapp.api.service.shortlink.ShortLinkRedirectService
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
@@ -22,7 +23,8 @@ class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStor
     private val getShortLinkAction: GetShortLinkAction
     private val updateShortLinkAction: UpdateShortLinkAction
     private val deleteShortLinkAction: DeleteShortLinkAction
-    private val shortLinkService: ShortLinkService
+    private val shortLinkRedirectService: ShortLinkRedirectService
+    private val shortLinkApiService: ShortLinkApiService
 
     init {
         with(Clock.systemUTC()) {
@@ -36,13 +38,14 @@ class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStor
             getShortLinkAction = GetShortLinkAction(shortLinkManager)
             updateShortLinkAction = UpdateShortLinkAction(shortLinkManager)
             deleteShortLinkAction = DeleteShortLinkAction(shortLinkManager)
-            shortLinkService =
-                ShortLinkService(
+            shortLinkApiService =
+                ShortLinkApiService(
                     createShortLinkAction,
                     getShortLinkAction,
                     updateShortLinkAction,
                     deleteShortLinkAction,
                 )
+            shortLinkRedirectService = ShortLinkRedirectService(shortLinkManager)
         }
     }
 
@@ -56,7 +59,10 @@ class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStor
 
     private fun newServer(): Server {
         val sb: ServerBuilder = Server.builder()
-        return sb.http(port).annotatedService("/shortlinks", shortLinkService).build()
+        return sb.http(port)
+            .annotatedService("/api", shortLinkApiService)
+            .annotatedService("/r", shortLinkRedirectService)
+            .build()
     }
 
     companion object {

@@ -4,13 +4,19 @@ This module allows you to run a local server that exposes CRUD APIs to manage sh
 
 ## Getting Started
 
-To start the server, run the `main()` function in [App.kt](src/main/kotlin/App.kt)
+* To start the server, run the `main()` function in [App.kt](src/main/kotlin/App.kt)
+* Create a new shortlink by running [scripts/create](../scripts/create) or hitting the `/api/create` endpoint manually.
+* Navigate to https://localhost:8080/r/{code} (replace `{code}` with the output of the shortlink create API repsonse) to
+  be redirected to the domain you created the shortlink for.
 
 ## API
+
+These are served from the `/api` path
 
 ### POST /create
 
 Request:
+
 ```json
 {
   "url": "https://example.com",
@@ -19,6 +25,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "owner": {
@@ -38,6 +45,7 @@ Response:
 ### GET /get
 
 Request:
+
 ```json
 {
   "code": "JdP0"
@@ -45,6 +53,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "creator": {
@@ -64,6 +73,7 @@ Response:
 ### PUT /update/url
 
 Request:
+
 ```json
 {
   "code": "JdP0",
@@ -72,6 +82,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "creator": {
@@ -91,6 +102,7 @@ Response:
 ### PUT /update/expiry
 
 Request:
+
 ```json
 {
   "code": "JdP0",
@@ -99,6 +111,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "creator": {
@@ -118,13 +131,15 @@ Response:
 ### DELETE /delete
 
 Request:
+
 ```json
 {
-  "code": "JdP0",
+  "code": "JdP0"
 }
 ```
 
 Response:
+
 ```json
 {}
 ```
