@@ -4,6 +4,10 @@ import java.net.URL
 import java.time.Clock
 
 data class ShortLink(
+    /** Optional: The user who created this short link */
+    val creator: ShortLinkUser? = null,
+    /** Optional: The user who owns this short link */
+    val owner: ShortLinkUser? = null,
     /** The URL we are encoding into the short code */
     val url: URL,
     /** The short code associated with the URL */

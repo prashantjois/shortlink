@@ -10,4 +10,4 @@ fi
 
 curl --request PUT 'localhost:8080/shortlinks/update/expiry' \
 -H 'Content-Type: application/json' \
--d "{\"code\": \"$1\", \"expiresAt\":$value}"
+-d "{\"username\":\"prashant\", \"code\": \"$1\", \"expiresAt\":$value}"

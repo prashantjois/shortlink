@@ -2,9 +2,11 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.testhelpers.clock.TestClock
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import ca.jois.shortlink.testhelpers.factory.UrlFactory
+import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
@@ -53,14 +55,10 @@ interface ShortLinkStoreTest {
     @Test
     fun `attempting to save shortlink with duplicate short code should throw an exception`() =
         runTest {
-            val shortLink = ShortLinkFactory.build()
-            var exception: ShortLinkStore.DuplicateShortCodeException? = null
-            try {
+            assertExceptionThrown(ShortLinkStore.DuplicateShortCodeException::class) {
+                val shortLink = ShortLinkFactory.build()
                 repeat(2) { shortLinkStore.create(shortLink) }
-            } catch (e: ShortLinkStore.DuplicateShortCodeException) {
-                exception = e
             }
-            assertThat(exception).isNotNull()
         }
 
     @Test
@@ -119,43 +117,80 @@ interface ShortLinkStoreTest {
             val newUrl = UrlFactory.random()
             val newExpiresAt = 6.minutes.fromNow().toEpochMilli()
 
-            shortLinkStore.update(code, url = newUrl)
+            shortLinkStore.update(null, code, url = newUrl)
             getDirect(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
-            shortLinkStore.update(code, expiresAt = newExpiresAt)
+            shortLinkStore.update(null, code, expiresAt = newExpiresAt)
             getDirect(code)!!.let { assertThat(it.expiresAt).isEqualTo(newExpiresAt) }
         }
     }
 
     @Test
-    fun `An exception should be thrown if the code does not exist`() = runTest {
-        var exception: ShortLinkStore.NotFoundException? = null
-        try {
-            shortLinkStore.update(ShortCode("Something"), url = UrlFactory.random())
-        } catch (e: ShortLinkStore.NotFoundException) {
-            exception = e
+    fun `An exception should be thrown when trying to update a shortlink if the code does not exist`() =
+        runTest {
+            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+                shortLinkStore.update(null, ShortCode("Something"), url = UrlFactory.random())
+            }
         }
 
-        assertThat(exception).isNotNull()
-    }
+    @Test
+    fun `An exception should be thrown when trying to update a shortlink if the owner does not match`() =
+        runTest {
+            val owner = ShortLinkUser("Someone")
+            createDirect(ShortLinkFactory.build(owner = owner))
+
+            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+                shortLinkStore.update(null, ShortCode("Something"), url = UrlFactory.random())
+            }
+            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+                shortLinkStore.update(
+                    ShortLinkUser("Someone Else"),
+                    ShortCode("Something"),
+                    url = UrlFactory.random()
+                )
+            }
+        }
 
     @Test
     fun `Existing entry should be deleted`() = runTest {
         val shortLink = createDirect()
         val code = shortLink.code
 
-        shortLinkStore.delete(code)
+        shortLinkStore.delete(null, code)
 
         getDirect(shortLink.code).let { assertThat(it).isNull() }
     }
 
-    fun `it should throw an exception if the short link doesn't exist`() = runTest {
-        var exception: ShortLinkStore.NotFoundException? = null
+    @Test
+    fun `An exception should be thrown when trying to delete a shortlink if the code does not exist`() =
+        runTest {
+            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+                shortLinkStore.delete(null, ShortCode("Missing"))
+            }
+        }
+
+    @Test
+    fun `An exception should be thrown when trying to delete a shortlink if the owner does not match`() =
+        runTest {
+            val owner = ShortLinkUser("Someone")
+            createDirect(ShortLinkFactory.build(owner = owner))
+
+            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+                shortLinkStore.delete(null, ShortCode("Missing"))
+            }
+            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+                shortLinkStore.delete(ShortLinkUser("Someone Else"), ShortCode("Missing"))
+            }
+        }
+
+    private suspend fun assertExceptionThrown(type: KClass<*>, block: suspend () -> Unit) {
+        var exception: Exception? = null
         try {
-            shortLinkStore.delete(ShortCode("Missing"))
-        } catch (e: ShortLinkStore.NotFoundException) {
+            block()
+        } catch (e: Exception) {
             exception = e
         }
 
-        assertThat(exception).isNotNull
+        assertThat(exception).isNotNull()
+        assertThat(exception).isInstanceOf(type.java)
     }
 }

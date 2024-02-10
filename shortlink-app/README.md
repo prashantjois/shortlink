@@ -13,16 +13,23 @@ To start the server, run the `main()` function in [App.kt](src/main/kotlin/App.k
 Request:
 ```json
 {
-  "url": "https://example.com"
+  "url": "https://example.com",
+  "username": "user"
 }
 ```
 
 Response:
 ```json
 {
-  "url": "https://example.com",
+  "owner": {
+    "identifier": "user"
+  },
   "code": {
     "value": "JdP0"
+  },
+  "url": "https://example.com",
+  "creator": {
+    "identifier": "user"
   },
   "createdAt": 1707072661478
 }
@@ -40,6 +47,12 @@ Request:
 Response:
 ```json
 {
+  "creator": {
+    "identifier": "user"
+  },
+  "owner": {
+    "identifier": "user"
+  },
   "url": "https://example.com",
   "code": {
     "value": "JdP0"
@@ -61,6 +74,12 @@ Request:
 Response:
 ```json
 {
+  "creator": {
+    "identifier": "user"
+  },
+  "owner": {
+    "identifier": "user"
+  },
   "url": "https://example.com/new",
   "code": {
     "value": "JdP0"
@@ -82,6 +101,12 @@ Request:
 Response:
 ```json
 {
+  "creator": {
+    "identifier": "user"
+  },
+  "owner": {
+    "identifier": "user"
+  },
   "url": "https://example.com/",
   "code": {
     "value": "JdP0"
