@@ -2,6 +2,7 @@ package ca.jois.shortlink.testhelpers
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkStore
 import java.net.URL
 import java.time.Clock
@@ -26,15 +27,15 @@ class FakeShortLinkStore : ShortLinkStore {
         }
     }
 
-    override suspend fun update(code: ShortCode, url: URL) {
+    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
         update(code) { it.copy(url = url) }
     }
 
-    override suspend fun update(code: ShortCode, expiresAt: Long?) {
+    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
         update(code) { it.copy(expiresAt = expiresAt) }
     }
 
-    override suspend fun delete(code: ShortCode) {
+    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
         shortLinksByCode.remove(code)
     }
 

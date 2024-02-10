@@ -10,4 +10,4 @@ fi
 
 curl --request PUT 'localhost:8080/shortlinks/update/url' \
 -H 'Content-Type: application/json' \
--d "{\"code\": \"$1\", \"url\":\"$2\"}"
+-d "{\"username\":\"prashant\", \"code\": \"$1\", \"url\":\"$2\"}"

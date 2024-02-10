@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkUser
 import java.net.URL
 import java.time.Clock
 import kotlinx.coroutines.sync.Mutex
@@ -16,7 +17,7 @@ class ShortLinkStoreInMemory : ShortLinkStore {
         mutex.withLock {
             val code = shortLink.code
             if (shortLinksByCode.containsKey(code)) {
-                throw ShortLinkStore.DuplicateShortCodeException(code.value)
+                throw ShortLinkStore.DuplicateShortCodeException(code)
             }
             shortLinksByCode[code] = shortLink
             return shortLink
@@ -35,24 +36,36 @@ class ShortLinkStoreInMemory : ShortLinkStore {
         }
     }
 
-    override suspend fun update(code: ShortCode, url: URL) {
-        update(code) { it.copy(url = url) }
+    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
+        update(updater, code) { it.copy(url = url) }
     }
 
-    override suspend fun update(code: ShortCode, expiresAt: Long?) {
-        update(code) { it.copy(expiresAt = expiresAt) }
+    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
+        update(updater, code) { it.copy(expiresAt = expiresAt) }
     }
 
-    override suspend fun delete(code: ShortCode) {
+    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
         mutex.withLock {
-            shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
+            val shortLink =
+                shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            if (shortLink.owner != null && shortLink.owner != deleter) {
+                throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            }
             shortLinksByCode.remove(code)
         }
     }
 
-    private suspend fun update(code: ShortCode, modify: (ShortLink) -> ShortLink): ShortLink {
+    private suspend fun update(
+        updater: ShortLinkUser?,
+        code: ShortCode,
+        modify: (ShortLink) -> ShortLink
+    ): ShortLink {
         return mutex.withLock {
-            val shortLink = shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundException(code)
+            val shortLink =
+                shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            if (shortLink.owner != null && shortLink.owner != updater) {
+                throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            }
             val modifiedShortLink = modify(shortLink)
 
             shortLinksByCode[code] = modifiedShortLink

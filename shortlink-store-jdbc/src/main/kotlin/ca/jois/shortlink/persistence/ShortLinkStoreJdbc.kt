@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkUser
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.net.URL
@@ -38,12 +39,14 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     override suspend fun create(shortLink: ShortLink): ShortLink {
         try {
             write(
-                "INSERT INTO shortlinks (code, url, created_at, expires_at) VALUES (?, ?, ?, ?)"
+                "INSERT INTO shortlinks (code, url, created_at, expires_at, creator, owner) VALUES (?, ?, ?, ?, ?, ?)"
             ) {
                 setString(1, shortLink.code.value)
                 setString(2, shortLink.url.toString())
                 setLong(3, shortLink.createdAt)
                 setLongOrNull(4, shortLink.expiresAt)
+                setStringOrNull(5, shortLink.creator?.identifier)
+                setStringOrNull(6, shortLink.creator?.identifier)
             }
         } catch (e: Exception) {
             val message = e.message ?: throw e
@@ -52,7 +55,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                 message.contains("Duplicate entry") || // mysql
                     message.contains("duplicate key value violates unique constraint") // postgres
             if (isDuplicate) {
-                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code.value)
+                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code)
             }
 
             throw e
@@ -90,41 +93,68 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                 url = URL(results.getString("url")),
                 createdAt = results.getLong("created_at"),
                 expiresAt = expiresAt,
+                creator = results.getString("creator")?.let { ShortLinkUser(it) },
+                owner = results.getString("owner")?.let { ShortLinkUser(it) }
             )
         }
 
         return null
     }
 
-    override suspend fun update(code: ShortCode, url: URL) {
+    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
+        val sql =
+            when (updater) {
+                null -> "UPDATE shortlinks SET url = ? WHERE code = ? AND owner is NULL"
+                else ->
+                    "UPDATE shortlinks SET url = ? WHERE code = ? AND (owner is NULL OR owner = ?)"
+            }
+
         val numUpdated =
-            write("UPDATE shortlinks SET url = ? WHERE code = ?") {
+            write(sql) {
                 setString(1, url.toString())
                 setString(2, code.value)
+                updater?.let { setString(3, it.identifier) }
             }
 
         if (numUpdated == 0) {
-            throw ShortLinkStore.NotFoundException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
     }
 
-    override suspend fun update(code: ShortCode, expiresAt: Long?) {
+    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
+        val sql =
+            when (updater) {
+                null -> "UPDATE shortlinks SET expires_at = ? WHERE code = ? AND owner is NULL"
+                else ->
+                    "UPDATE shortlinks SET expires_at = ? WHERE code = ? AND (owner is NULL OR owner = ?)"
+            }
+
         val numUpdated =
-            write("UPDATE shortlinks SET expires_at = ? WHERE code = ?") {
+            write(sql) {
                 setLongOrNull(1, expiresAt)
                 setString(2, code.value)
+                updater?.let { setString(3, it.identifier) }
             }
 
         if (numUpdated == 0) {
-            throw ShortLinkStore.NotFoundException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
     }
 
-    override suspend fun delete(code: ShortCode) {
-        val numDeleted = write("DELETE FROM shortlinks WHERE code = ?") { setString(1, code.value) }
+    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
+        val sql =
+            when (deleter) {
+                null -> "DELETE FROM shortlinks WHERE code = ? AND owner is NULL"
+                else -> "DELETE FROM shortlinks WHERE code = ? AND (owner is NULL OR owner = ?)"
+            }
+        val numDeleted =
+            write(sql) {
+                setString(1, code.value)
+                deleter?.let { setString(2, it.identifier) }
+            }
 
         if (numDeleted == 0) {
-            throw ShortLinkStore.NotFoundException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
     }
 
@@ -153,5 +183,12 @@ private fun PreparedStatement.setLongOrNull(i: Int, value: Long?) {
     when (value) {
         null -> setNull(i, java.sql.Types.BIGINT)
         else -> setLong(i, value)
+    }
+}
+
+private fun PreparedStatement.setStringOrNull(i: Int, value: String?) {
+    when (value) {
+        null -> setNull(i, java.sql.Types.VARCHAR)
+        else -> setString(i, value)
     }
 }

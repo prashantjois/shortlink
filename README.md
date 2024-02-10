@@ -12,7 +12,9 @@ of interfaces to generate short codes, manage short link lifecycles, and persist
 * `code`: A unique identifier for the shortened URL.
 * `url`: The original URL being shortened.
 * `createdAt`: The timestamp when the short link was created.
-* `expiresAt`: The timestamp when the short link expires
+* `expiresAt`: (Optional) The timestamp when the short link expires
+* `creator`: (Optional) The user who created the short link.
+* `owner`: (Optional) The user who is allowed to modify the short link.
 
 ### Generator
 
@@ -74,26 +76,25 @@ val manager = RealShortLinkManager(storage, generator)
 /* Shorten a new URL */
 val longUrl = "https://www.example.com/products/category/subcategory/item?color=blue&size=medium&sort=popular&newArrivals=true"
 val expiresAt = System.currentTimeMillis()
-val shortLink = manager.create(URL(longUrl), expiresAt).also {
+val shortLink = manager.create(ShortLinkUser("username"), URL(longUrl), expiresAt).also {
   println(it.code) // The unique code generated to 
 }
 
-
 /* Oops, we made a mistake, update the URL the code points to */
 val fixedUrl = "https://www.example.com/products/category/subcategory/item?color=red&size=medium&sort=popular&newArrivals=true"
-manager.update(shortLink.code, URL(fixedUrl)).also {
+manager.update(ShortLinkUser("username"), shortLink.code, URL(fixedUrl)).also {
   println(it.code) // This will be the same from when we created it
   println(it.url) // The URL will be updated given the value we passed in
 }
 
 /* Turns out lots of people are using the code, we don't want to expire */
-manager.update(shortLink.code, null).also {
+manager.update(ShortLinkUser("username"), shortLink.code, null).also {
   println(it.code) // This will be the same from when we created it
   println(it.expiresAt) // null because the link does not expire
 }
 
 /* We have regrets, let's get rid of the entry altogether */
-manager.delete(shortLink.code)
+manager.delete(ShortLinkUser("username"), shortLink.code)
 ```
 
 ### Web Server

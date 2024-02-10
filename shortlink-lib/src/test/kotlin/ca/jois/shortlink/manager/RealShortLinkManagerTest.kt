@@ -2,6 +2,7 @@ package ca.jois.shortlink.manager
 
 import ca.jois.shortlink.generator.NaiveShortCodeGenerator
 import ca.jois.shortlink.model.ShortCode
+import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.testhelpers.FakeShortLinkStore
 import ca.jois.shortlink.testhelpers.clock.TestClock
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
@@ -30,6 +31,7 @@ class RealShortLinkManagerTest {
                 val url = UrlFactory.random()
                 val shortLink =
                     realShortLinkManager.create(
+                        creator = ShortLinkUser("user"),
                         url = url,
                         expiresAt = 5.minutes.fromNow().toEpochMilli()
                     )
@@ -119,12 +121,12 @@ class RealShortLinkManagerTest {
 
                 val newUrl = UrlFactory.random()
 
-                realShortLinkManager.update(code, url = newUrl)
+                realShortLinkManager.update(null, code, url = newUrl)
 
                 shortLinkStore.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
 
                 val newExpiry = 6.minutes.fromNow().toEpochMilli()
-                realShortLinkManager.update(code, expiresAt = newExpiry).let {
+                realShortLinkManager.update(null, code, expiresAt = newExpiry).let {
                     assertThat(it.expiresAt).isEqualTo(newExpiry)
                 }
             }
@@ -157,7 +159,7 @@ class RealShortLinkManagerTest {
                 val code = shortLink.code
                 shortLinkStore.create(shortLink)
 
-                realShortLinkManager.delete(code)
+                realShortLinkManager.delete(null, code)
 
                 assertThat(shortLinkStore.get(code)).isNull()
             }
