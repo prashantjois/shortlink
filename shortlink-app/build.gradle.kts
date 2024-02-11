@@ -30,3 +30,7 @@ application {
     mainClass.set("shortlinkapp.AppKt")
 }
 
+val buildReact by tasks.registering(Exec::class) {
+    workingDir = file("frontend") // Update with the path to your React app
+    commandLine("npm", "run", "build")
+}

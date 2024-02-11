@@ -8,6 +8,8 @@ import ca.jois.shortlink.persistence.ShortLinkStore
 import ca.jois.shortlink.util.logging.Logging
 import com.linecorp.armeria.server.Server
 import com.linecorp.armeria.server.ServerBuilder
+import com.linecorp.armeria.server.file.FileService
+import com.linecorp.armeria.server.file.HttpFile
 import java.time.Clock
 import shortlinkapp.api.service.shortlink.ShortLinkApiService
 import shortlinkapp.api.service.shortlink.ShortLinkRedirectService
@@ -15,6 +17,7 @@ import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
+import java.nio.file.Paths
 
 class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStore) {
     private val shortLinkManager: ShortLinkManager
@@ -62,7 +65,8 @@ class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStor
         return sb.http(port)
             .annotatedService("/api", shortLinkApiService)
             .annotatedService("/r", shortLinkRedirectService)
-            .build()
+            .serviceUnder("/", FileService.of(Paths.get("shortlink-app/frontend/build")))
+        .build()
     }
 
     companion object {
