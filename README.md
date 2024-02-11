@@ -29,6 +29,7 @@ these types of storage:
 * `In-Memory`: For lightweight or testing purposes.
 * `JDBC`: For relational databases, using Java Database Connectivity.
 * `MongoDB`: For those preferring a NoSQL database.
+* `DynamoDB`: For AWS DynamoDB.
 
 ### Manager
 

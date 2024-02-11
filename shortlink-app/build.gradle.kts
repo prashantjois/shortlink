@@ -10,6 +10,8 @@ dependencies {
     implementation(project(":shortlink-store-in-memory"))
     implementation(project(":shortlink-store-jdbc"))
     implementation(project(":shortlink-store-mongodb"))
+    implementation(project(":shortlink-store-dynamodb"))
+    implementation(libs.awssdk.dynamodb.enhanced)
     implementation(libs.armeria)
     implementation(libs.hikari)
     implementation(libs.log4j.api)

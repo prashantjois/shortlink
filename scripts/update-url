@@ -8,6 +8,6 @@ else
     value=$2
 fi
 
-curl --request PUT 'localhost:8080/shortlinks/update/url' \
+curl --request PUT 'localhost:8080/api/update/url' \
 -H 'Content-Type: application/json' \
 -d "{\"username\":\"prashant\", \"code\": \"$1\", \"url\":\"$2\"}"

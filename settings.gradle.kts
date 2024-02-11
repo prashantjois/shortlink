@@ -14,6 +14,7 @@ dependencyResolutionManagement {
             version("mongodb", "4.11.1")
             version("moshi", "1.14.0")
             version("testcontainers", "1.19.4")
+            version("awssdk", "2.20.56")
 
             plugin("ktfmt", "com.ncorti.ktfmt.gradle").versionRef("ktfmt")
 
@@ -40,6 +41,7 @@ dependencyResolutionManagement {
             library("testcontainers-mongodb", "org.testcontainers", "mongodb").versionRef("testcontainers")
             library("testcontainers-mysql", "org.testcontainers", "mysql").versionRef("testcontainers")
             library("testcontainers-postgresql", "org.testcontainers", "postgresql").versionRef("testcontainers")
+            library("awssdk-dynamodb-enhanced", "software.amazon.awssdk", "dynamodb-enhanced").versionRef("awssdk")
         }
     }
 }
@@ -61,5 +63,6 @@ include("shortlink-lib")
 include("shortlink-store-in-memory")
 include("shortlink-store-jdbc")
 include("shortlink-store-mongodb")
+include("shortlink-store-dynamodb")
 include("shortlink-store-testing")
 include("shortlink-app")

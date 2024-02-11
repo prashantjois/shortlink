@@ -10,6 +10,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/shortlink-app" />
             <option value="$PROJECT_DIR$/shortlink-lib" />
+            <option value="$PROJECT_DIR$/shortlink-store-dynamodb" />
             <option value="$PROJECT_DIR$/shortlink-store-in-memory" />
             <option value="$PROJECT_DIR$/shortlink-store-jdbc" />
             <option value="$PROJECT_DIR$/shortlink-store-mongodb" />
