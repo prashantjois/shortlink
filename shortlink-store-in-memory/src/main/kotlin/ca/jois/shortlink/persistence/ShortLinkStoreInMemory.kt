@@ -13,6 +13,32 @@ class ShortLinkStoreInMemory : ShortLinkStore {
     private val mutex = Mutex()
     private val shortLinksByCode = HashMap<ShortCode, ShortLink>()
 
+    override suspend fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String?,
+        limit: Int?,
+    ): ShortLinkStore.PaginatedResult<ShortLink> {
+        val allShortLinksByOwner =
+            shortLinksByCode.values.sortedBy { it.createdAt }.filter { it.owner == owner }
+
+        val totalNumEntries = allShortLinksByOwner.size
+        val startIndex = paginationKey?.toIntOrNull() ?: 0
+        val limitOrDefault = limit ?: PAGE_SIZE
+        val endIndex =
+            when (startIndex + limitOrDefault > totalNumEntries) {
+                true -> totalNumEntries
+                false -> startIndex + limitOrDefault
+            }
+        val results = allShortLinksByOwner.subList(startIndex, endIndex)
+
+        val nextPaginationKey =
+            when (endIndex < allShortLinksByOwner.size - 1) {
+                true -> endIndex.toString()
+                false -> null
+            }
+        return ShortLinkStore.PaginatedResult(results, nextPaginationKey)
+    }
+
     override suspend fun create(shortLink: ShortLink): ShortLink {
         mutex.withLock {
             val code = shortLink.code
@@ -71,5 +97,9 @@ class ShortLinkStoreInMemory : ShortLinkStore {
             shortLinksByCode[code] = modifiedShortLink
             modifiedShortLink
         }
+    }
+
+    companion object {
+        const val PAGE_SIZE = 100
     }
 }

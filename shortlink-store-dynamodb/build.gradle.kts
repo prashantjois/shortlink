@@ -1,10 +1,8 @@
-import com.ncorti.ktfmt.gradle.tasks.KtfmtFormatTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 dependencies {
   implementation(project(":shortlink-lib"))
   implementation(libs.coroutines)
   implementation(libs.awssdk.dynamodb.enhanced)
+  implementation(libs.moshi)
 
   testImplementation(kotlin("test"))
   testImplementation(project(":shortlink-store-testing"))

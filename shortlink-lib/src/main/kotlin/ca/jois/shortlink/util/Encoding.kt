@@ -10,4 +10,8 @@ object Encoding {
         byteBuffer.putLong(this.leastSignificantBits)
         return Base64.getUrlEncoder().encodeToString(byteBuffer.array())
     }
+
+    fun String.toBase64(): String = Base64.getEncoder().encodeToString(toByteArray(Charsets.UTF_8))
+
+    fun String.fromBase64(): String = String(Base64.getDecoder().decode(this), Charsets.UTF_8)
 }

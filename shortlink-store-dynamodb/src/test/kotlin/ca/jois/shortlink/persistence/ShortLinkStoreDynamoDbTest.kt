@@ -16,9 +16,11 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema
+import software.amazon.awssdk.enhanced.dynamodb.model.CreateTableEnhancedRequest
+import software.amazon.awssdk.enhanced.dynamodb.model.EnhancedGlobalSecondaryIndex
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
-import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput
+import software.amazon.awssdk.services.dynamodb.model.ProjectionType
 
 @Testcontainers
 class ShortLinkStoreDynamoDbTest : ShortLinkStoreTest {
@@ -43,7 +45,7 @@ class ShortLinkStoreDynamoDbTest : ShortLinkStoreTest {
         return shortLink
     }
 
-    fun table(): DynamoDbTable<DyShortLinkItem> {
+    private fun table(): DynamoDbTable<DyShortLinkItem> {
         val enhancedClient =
             DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient()).build()
 
@@ -55,15 +57,21 @@ class ShortLinkStoreDynamoDbTest : ShortLinkStoreTest {
         return table
     }
 
-    fun createTable() {
-        table().createTable {
-            it.provisionedThroughput(
-                ProvisionedThroughput.builder().readCapacityUnits(5L).writeCapacityUnits(5L).build()
+    private fun createTable() {
+        val table = table()
+        table.createTable { it: CreateTableEnhancedRequest.Builder ->
+            it.provisionedThroughput { it.readCapacityUnits(5L).writeCapacityUnits(5L) }
+            it.globalSecondaryIndices(
+                EnhancedGlobalSecondaryIndex.builder()
+                    .indexName(DyShortLinkItem.Indexes.GSI.OWNER_INDEX)
+                    .projection { it.projectionType(ProjectionType.ALL) }
+                    .provisionedThroughput { it.readCapacityUnits(5L).writeCapacityUnits(5L) }
+                    .build()
             )
         }
     }
 
-    fun dynamoDbClient(): DynamoDbClient {
+    private fun dynamoDbClient(): DynamoDbClient {
         val endpoint = "http://${container.host}:${container.firstMappedPort}"
         return DynamoDbClient.builder()
             .endpointOverride(URI.create(endpoint))

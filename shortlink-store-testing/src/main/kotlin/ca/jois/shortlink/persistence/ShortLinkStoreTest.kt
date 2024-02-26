@@ -45,6 +45,41 @@ interface ShortLinkStoreTest {
     suspend fun createDirect(shortLink: ShortLink = ShortLinkFactory.build()): ShortLink
 
     @Test
+    fun `list by owners should get all the shortlinks for a given owner`() = runTest {
+        val owner = ShortLinkUser("Someone")
+        val shortLinksForOwner = (1..5).map { createDirect(ShortLinkFactory.build(owner = owner)) }
+        val otherShortLinks = (1..5).map { createDirect(ShortLinkFactory.build()) }
+
+        shortLinkStore.listByOwner(owner).let {
+            assertThat(it.entries).containsExactlyInAnyOrder(*shortLinksForOwner.toTypedArray())
+            assertThat(it.entries).doesNotContain(*otherShortLinks.toTypedArray())
+        }
+    }
+
+    @Test
+    fun `list by owners should return paginated results`() = runTest {
+        val owner = ShortLinkUser("Someone")
+        val shortLinksForOwner = (1..5).map { createDirect(ShortLinkFactory.build(owner = owner)) }
+        val otherShortLinks = (1..5).map { createDirect(ShortLinkFactory.build()) }
+
+        val paginationKey =
+            shortLinkStore.listByOwner(owner, limit = 3).let {
+                assertThat(it.entries).hasSize(3)
+                assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
+                assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
+                assertThat(it.paginationKey).isNotNull()
+                it.paginationKey
+            }
+
+        shortLinkStore.listByOwner(owner, limit = 3, paginationKey = paginationKey).let {
+            assertThat(it.entries).hasSize(2)
+            assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
+            assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
+            assertThat(it.paginationKey).isNull()
+        }
+    }
+
+    @Test
     fun `shortlink should be saved`() = runTest {
         val shortLink = ShortLinkFactory.build()
         shortLinkStore.create(shortLink)

@@ -8,6 +8,27 @@ import java.time.Clock
 
 interface ShortLinkStore {
     /**
+     * A generic container for a paginated result of entries.
+     *
+     * @param T The type of entry being paginated.
+     * @param paginationKey A key that can be used to retrieve the next page of short links. If
+     *   null, indicates there are no additional pages.
+     */
+    data class PaginatedResult<T>(val entries: List<T>, val paginationKey: String?)
+
+    /**
+     * Retrieves all [ShortLink] entries in the store that are owned by the given [owner] in a
+     * paginated manner.
+     *
+     * @param owner The owner of the short links to retrieve.
+     */
+    suspend fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String? = null,
+        limit: Int? = null,
+    ): PaginatedResult<ShortLink>
+
+    /**
      * Persists the given [shortLink] in a thread-safe manner.
      *
      * @throws [DuplicateShortCodeException] if an entry already exists with the given

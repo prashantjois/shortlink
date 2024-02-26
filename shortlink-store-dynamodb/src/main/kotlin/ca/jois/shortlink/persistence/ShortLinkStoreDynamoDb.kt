@@ -6,11 +6,18 @@ import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toDyShortLinkItem
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toKey
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toShortLink
+import ca.jois.shortlink.persistence.ShortLinkStore.PaginatedResult
+import ca.jois.shortlink.util.Encoding.fromBase64
+import ca.jois.shortlink.util.Encoding.toBase64
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.net.URL
 import java.time.Clock
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 
 /**
  * A [ShortLinkStore] implementation that uses Amazon DynamoDB as the underlying storage.
@@ -35,6 +42,37 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
 
     private val table =
         client.table(DyShortLinkItem.TABLE_NAME, TableSchema.fromBean(DyShortLinkItem::class.java))
+
+    override suspend fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String?,
+        limit: Int?,
+    ): PaginatedResult<ShortLink> {
+        val page =
+            table
+                .index(DyShortLinkItem.Indexes.GSI.OWNER_INDEX)
+                .query { builder ->
+                    builder.queryConditional(QueryConditional.keyEqualTo(owner.toKey()))
+                    paginationKey?.let {
+                        builder.exclusiveStartKey(
+                            ListByOwnerPaginationKey.decode(it).toExclusiveStartKey()
+                        )
+                    }
+                    limit?.let { builder.limit(it) }
+                }
+                .firstOrNull() ?: return PaginatedResult(emptyList(), null)
+
+        val shortLinks = page.items().map { it.toShortLink() }
+        val nextPaginationKey =
+            page.lastEvaluatedKey()?.let {
+                ListByOwnerPaginationKey(
+                        it[DyShortLinkItem::code.name]!!.s(),
+                        it[DyShortLinkItem::owner.name]!!.s()
+                    )
+                    .encode()
+            }
+        return PaginatedResult(shortLinks, nextPaginationKey)
+    }
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
         shortLink.owner?.identifier?.let {
@@ -85,5 +123,28 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
             throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
         table.deleteItem(code.toKey())
+    }
+    /**
+     * Encapsulates the pagination key used to retrieve the next page of results from a paginated
+     * query when listing short links by owner.
+     */
+    private data class ListByOwnerPaginationKey(
+        val code: String,
+        val owner: String,
+    ) {
+        companion object {
+            private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+            private val adapter = moshi.adapter(ListByOwnerPaginationKey::class.java)
+
+            fun decode(encoded: String) = adapter.fromJson(encoded.fromBase64())!!
+        }
+
+        fun encode() = adapter.toJson(this).toBase64()
+
+        fun toExclusiveStartKey() =
+            mapOf(
+                DyShortLinkItem::code.name to AttributeValue.fromS(code),
+                DyShortLinkItem::owner.name to AttributeValue.fromS(owner),
+            )
     }
 }

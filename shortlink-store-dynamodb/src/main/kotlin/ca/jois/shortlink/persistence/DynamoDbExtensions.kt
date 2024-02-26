@@ -7,7 +7,11 @@ import java.net.URL
 import software.amazon.awssdk.enhanced.dynamodb.Key
 
 object DynamoDbExtensions {
-    fun ShortCode.toKey() = Key.builder().partitionValue(value).build()
+    fun String.toKey(): Key = Key.builder().partitionValue(this).build()
+
+    fun ShortCode.toKey(): Key = value.toKey()
+
+    fun ShortLinkUser.toKey(): Key = identifier.toKey()
 
     fun ShortLink.toDyShortLinkItem(version: Long? = null) =
         DyShortLinkItem(

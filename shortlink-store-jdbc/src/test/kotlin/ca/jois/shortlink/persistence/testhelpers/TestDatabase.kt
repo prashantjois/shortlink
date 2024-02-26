@@ -94,7 +94,7 @@ object TestDatabase {
         shortLink: ShortLink = ShortLinkFactory.build()
     ): ShortLink {
         val insertSql =
-            "INSERT INTO shortlinks (code, url, created_at, expires_at) VALUES (?, ?, ?, ?)"
+            "INSERT INTO shortlinks (code, url, created_at, expires_at, owner) VALUES (?, ?, ?, ?, ?)"
 
         val connection = HikariDataSource(hikariConfig()).connection
         connection
@@ -104,6 +104,8 @@ object TestDatabase {
                 setString(2, shortLink.url.toString())
                 setLong(3, shortLink.createdAt)
                 shortLink.expiresAt?.let { setLong(4, it) } ?: setNull(4, java.sql.Types.BIGINT)
+                shortLink.owner?.let { setString(5, it.identifier) }
+                    ?: setNull(5, java.sql.Types.VARCHAR)
             }
             .executeUpdate()
 

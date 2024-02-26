@@ -7,29 +7,60 @@ import ca.jois.shortlink.persistence.ShortLinkMongoDbExtensions.toDocument
 import ca.jois.shortlink.persistence.ShortLinkMongoDbExtensions.toShortLink
 import com.mongodb.MongoWriteException
 import com.mongodb.client.MongoClients
-import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Filters.and
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Filters.exists
+import com.mongodb.client.model.Filters.gt
+import com.mongodb.client.model.Filters.or
 import com.mongodb.client.model.IndexOptions
 import java.net.URL
 import java.time.Clock
 import org.bson.Document
 import org.bson.conversions.Bson
+import org.bson.types.ObjectId
 
-/** An implementation of [ShortlinkStore] that uses MongoDB. */
+/** An implementation of [ShortLinkStore] that uses MongoDB. */
 class ShortLinkStoreMongoDb(
     connectionString: String,
     databaseName: String,
 ) : ShortLinkStore {
+    companion object {
+        private const val PAGE_SIZE = 100
+        private const val SHORT_LINK_STORE_COLLECTION = "shortlinks"
+    }
+
     private val client = MongoClients.create(connectionString)
     private val database = client.getDatabase(databaseName)
-    private val shortLinksCollection = database.getCollection("shortlinks")
+    private val shortLinksCollection = database.getCollection(SHORT_LINK_STORE_COLLECTION)
 
     init {
         shortLinksCollection.createIndex(
-            Document(MongoDbFields.CODE.name, 1),
+            Document(MongoDbFields.CODE.fieldName, 1),
             IndexOptions().unique(true)
         )
+    }
+
+    override suspend fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String?,
+        limit: Int?,
+    ): ShortLinkStore.PaginatedResult<ShortLink> {
+        val limitOrDefault = limit ?: PAGE_SIZE
+        val ownerFilter = eq(MongoDbFields.OWNER.fieldName, owner.identifier)
+        val filter =
+            paginationKey?.let { and(ownerFilter, gt(MongoDbFields.ID.fieldName, ObjectId(it))) }
+                ?: ownerFilter
+
+        val results = shortLinksCollection.find(filter).limit(limitOrDefault)
+        val shortLinks = results.map { it.toShortLink() }.toList()
+        val nextId =
+            when (shortLinks.size < limitOrDefault) {
+                true -> null
+                false -> {
+                    results.lastOrNull()?.getObjectId(MongoDbFields.ID.fieldName)?.toString()
+                }
+            }
+        return ShortLinkStore.PaginatedResult(shortLinks, nextId)
     }
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
@@ -49,7 +80,7 @@ class ShortLinkStoreMongoDb(
     override suspend fun get(code: ShortCode, excludeExpired: Boolean): ShortLink? {
         val shortLink =
             shortLinksCollection
-                .find(Document(MongoDbFields.CODE.name, code.value))
+                .find(Document(MongoDbFields.CODE.fieldName, code.value))
                 .firstOrNull()
                 ?.toShortLink() ?: return null
 
@@ -62,11 +93,10 @@ class ShortLinkStoreMongoDb(
     }
 
     override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
-
         val updateResult =
             shortLinksCollection.updateOne(
                 modifyFilterWithOwner(updater, code),
-                Document("\$set", Document(MongoDbFields.URL.name, url.toString()))
+                Document("\$set", Document(MongoDbFields.URL.fieldName, url.toString()))
             )
         if (updateResult.matchedCount == 0L) {
             throw ShortLinkStore.NotFoundOrNotPermittedException(code)
@@ -77,7 +107,7 @@ class ShortLinkStoreMongoDb(
         val updateResult =
             shortLinksCollection.updateOne(
                 modifyFilterWithOwner(updater, code),
-                Document("\$set", Document(MongoDbFields.EXPIRES_AT.name, expiresAt))
+                Document("\$set", Document(MongoDbFields.EXPIRES_AT.fieldName, expiresAt))
             )
         if (updateResult.matchedCount == 0L) {
             throw ShortLinkStore.NotFoundOrNotPermittedException(code)
@@ -98,16 +128,20 @@ class ShortLinkStoreMongoDb(
         val filter =
             when (user) {
                 null ->
-                    Filters.and(
-                        eq(MongoDbFields.CODE.name, code.value),
-                        exists(MongoDbFields.OWNER.name, false)
+                    and(
+                        eq(MongoDbFields.CODE.fieldName, code.value),
+                        or(
+                            eq(MongoDbFields.OWNER.fieldName, null),
+                            exists(MongoDbFields.OWNER.fieldName, false)
+                        )
                     )
                 else ->
-                    Filters.and(
-                        eq(MongoDbFields.CODE.name, code.value),
-                        Filters.or(
-                            exists(MongoDbFields.OWNER.name, false),
-                            eq(MongoDbFields.OWNER.name, user.identifier)
+                    and(
+                        eq(MongoDbFields.CODE.fieldName, code.value),
+                        or(
+                            eq(MongoDbFields.OWNER.fieldName, null),
+                            exists(MongoDbFields.OWNER.fieldName, false),
+                            eq(MongoDbFields.OWNER.fieldName, user.identifier)
                         )
                     )
             }

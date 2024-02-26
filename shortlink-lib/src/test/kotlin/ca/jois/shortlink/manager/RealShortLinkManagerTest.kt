@@ -3,7 +3,7 @@ package ca.jois.shortlink.manager
 import ca.jois.shortlink.generator.NaiveShortCodeGenerator
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLinkUser
-import ca.jois.shortlink.testhelpers.FakeShortLinkStore
+import ca.jois.shortlink.testhelpers.ShortLinkStoreFake
 import ca.jois.shortlink.testhelpers.clock.TestClock
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import ca.jois.shortlink.testhelpers.factory.UrlFactory
@@ -22,7 +22,7 @@ class RealShortLinkManagerTest {
         @Test
         fun `ShortLink is created with the provided params`() = runTest {
             with(TestClock()) {
-                val shortLinkStore = FakeShortLinkStore()
+                val shortLinkStore = ShortLinkStoreFake()
                 val realShortLinkManager =
                     RealShortLinkManager(
                         shortCodeGenerator = NaiveShortCodeGenerator(),
@@ -45,7 +45,7 @@ class RealShortLinkManagerTest {
     @DisplayName("RealShortLinkManager#get")
     inner class GetTest {
         private val clock = TestClock()
-        private val shortLinkStore = FakeShortLinkStore()
+        private val shortLinkStore = ShortLinkStoreFake()
         private lateinit var realShortLinkManager: RealShortLinkManager
 
         @BeforeEach
@@ -97,7 +97,7 @@ class RealShortLinkManagerTest {
     @DisplayName("RealShortLinkManager#update")
     inner class UpdateUrlTest {
         private val clock = TestClock()
-        private val shortLinkStore = FakeShortLinkStore()
+        private val shortLinkStore = ShortLinkStoreFake()
         private lateinit var realShortLinkManager: RealShortLinkManager
 
         @BeforeEach
@@ -137,7 +137,7 @@ class RealShortLinkManagerTest {
     @DisplayName("RealShortLinkManager#delete")
     inner class DeleteTest {
         private val clock = TestClock()
-        private val shortLinkStore = FakeShortLinkStore()
+        private val shortLinkStore = ShortLinkStoreFake()
         private lateinit var realShortLinkManager: RealShortLinkManager
 
         @BeforeEach

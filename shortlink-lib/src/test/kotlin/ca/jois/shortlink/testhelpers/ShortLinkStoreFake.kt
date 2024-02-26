@@ -7,8 +7,19 @@ import ca.jois.shortlink.persistence.ShortLinkStore
 import java.net.URL
 import java.time.Clock
 
-class FakeShortLinkStore : ShortLinkStore {
+class ShortLinkStoreFake : ShortLinkStore {
     private val shortLinksByCode = HashMap<ShortCode, ShortLink>()
+
+    override suspend fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String?,
+        limit: Int?,
+    ): ShortLinkStore.PaginatedResult<ShortLink> {
+        return shortLinksByCode.values
+            .filter { it.owner == owner }
+            .take(limit ?: Int.MAX_VALUE)
+            .let { ShortLinkStore.PaginatedResult(it, null) }
+    }
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
         shortLinksByCode[shortLink.code] = shortLink
