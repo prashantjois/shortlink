@@ -9,8 +9,8 @@ import java.net.URL
 object ShortLinkFactory {
     /** Generates a [ShortLink] with the given parameters, choosing defaults if not specified. */
     fun build(
-        creator: ShortLinkUser? = null,
-        owner: ShortLinkUser? = creator,
+        creator: ShortLinkUser = ShortLinkUser.ANONYMOUS,
+        owner: ShortLinkUser = creator,
         originalUrl: URL = UrlFactory.random(),
         shortCode: ShortCode = NaiveShortCodeGenerator().generate(),
         createdAt: Long = 0,

@@ -64,8 +64,8 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                     url = URL(results.getString(DbFields.URL.name)),
                     createdAt = results.getLong(DbFields.CREATED_AT.name),
                     expiresAt = results.getLongOrNull(DbFields.EXPIRES_AT.name),
-                    creator = results.getString(DbFields.CREATOR.name)?.let { ShortLinkUser(it) },
-                    owner = results.getString(DbFields.OWNER.name)?.let { ShortLinkUser(it) }
+                    creator = ShortLinkUser(results.getString(DbFields.CREATOR.name)!!),
+                    owner = ShortLinkUser(results.getString(DbFields.OWNER.name)!!)
                 )
             )
         }
@@ -88,8 +88,8 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                 setString(2, shortLink.url.toString())
                 setLong(3, shortLink.createdAt)
                 setLongOrNull(4, shortLink.expiresAt)
-                setStringOrNull(5, shortLink.creator?.identifier)
-                setStringOrNull(6, shortLink.owner?.identifier)
+                setStringOrNull(5, shortLink.creator.identifier)
+                setStringOrNull(6, shortLink.owner.identifier)
             }
         } catch (e: Exception) {
             val message = e.message ?: throw e
@@ -129,28 +129,24 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                 url = URL(results.getString(DbFields.URL.name)),
                 createdAt = results.getLong(DbFields.CREATED_AT.name),
                 expiresAt = results.getLongOrNull(DbFields.EXPIRES_AT.name),
-                creator = results.getString(DbFields.CREATOR.name)?.let { ShortLinkUser(it) },
-                owner = results.getString(DbFields.OWNER.name)?.let { ShortLinkUser(it) }
+                creator = ShortLinkUser(results.getString(DbFields.CREATOR.name)!!),
+                owner = ShortLinkUser(results.getString(DbFields.OWNER.name)!!)
             )
         }
 
         return null
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
+    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) {
         val sql =
-            when (updater) {
-                null ->
-                    "UPDATE $TABLE_NAME SET ${DbFields.URL.name} = ? WHERE ${DbFields.CODE.name} = ? AND ${DbFields.OWNER.name} is NULL"
-                else ->
-                    "UPDATE $TABLE_NAME SET ${DbFields.URL.name} = ? WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} is NULL OR ${DbFields.OWNER.name} = ?)"
-            }
+            "UPDATE $TABLE_NAME SET ${DbFields.URL.name} = ? WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} = ? OR ${DbFields.OWNER.name} = ?)"
 
         val numUpdated =
             write(sql) {
                 setString(1, url.toString())
                 setString(2, code.value)
-                updater?.let { setString(3, it.identifier) }
+                setString(3, ShortLinkUser.ANONYMOUS.identifier)
+                setString(4, updater.identifier)
             }
 
         if (numUpdated == 0) {
@@ -158,20 +154,16 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
         }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
+    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) {
         val sql =
-            when (updater) {
-                null ->
-                    "UPDATE $TABLE_NAME SET ${DbFields.EXPIRES_AT.name} = ? WHERE ${DbFields.CODE.name} = ? AND ${DbFields.OWNER.name} is NULL"
-                else ->
-                    "UPDATE $TABLE_NAME SET ${DbFields.EXPIRES_AT.name} = ? WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} is NULL OR ${DbFields.OWNER.name} = ?)"
-            }
+            "UPDATE $TABLE_NAME SET ${DbFields.EXPIRES_AT.name} = ? WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} = ? OR ${DbFields.OWNER.name} = ?)"
 
         val numUpdated =
             write(sql) {
                 setLongOrNull(1, expiresAt)
                 setString(2, code.value)
-                updater?.let { setString(3, it.identifier) }
+                setString(3, ShortLinkUser.ANONYMOUS.identifier)
+                setString(4, updater.identifier)
             }
 
         if (numUpdated == 0) {
@@ -179,18 +171,14 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
         }
     }
 
-    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
+    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
         val sql =
-            when (deleter) {
-                null ->
-                    "DELETE FROM $TABLE_NAME WHERE ${DbFields.CODE.name} = ? AND ${DbFields.OWNER.name} is NULL"
-                else ->
-                    "DELETE FROM $TABLE_NAME WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} is NULL OR ${DbFields.OWNER.name} = ?)"
-            }
+            "DELETE FROM $TABLE_NAME WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} = ? OR ${DbFields.OWNER.name} = ?)"
         val numDeleted =
             write(sql) {
                 setString(1, code.value)
-                deleter?.let { setString(2, it.identifier) }
+                setString(2, ShortLinkUser.ANONYMOUS.identifier)
+                setString(3, deleter.identifier)
             }
 
         if (numDeleted == 0) {

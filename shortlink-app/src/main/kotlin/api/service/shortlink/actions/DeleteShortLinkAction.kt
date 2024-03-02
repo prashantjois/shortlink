@@ -6,7 +6,7 @@ import ca.jois.shortlink.model.ShortLinkUser
 
 class DeleteShortLinkAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: Request) {
-        shortLinkManager.delete(ShortLinkUser(request.username), ShortCode(request.code))
+        shortLinkManager.delete(ShortCode(request.code), ShortLinkUser(request.username))
     }
 
     data class Request(

@@ -14,7 +14,7 @@ class RealShortLinkManager(
     private val shortCodeGenerator: ShortCodeGenerator,
     private val shortLinkStore: ShortLinkStore,
 ) : ShortLinkManager {
-    override fun create(creator: ShortLinkUser?, url: URL, expiresAt: Long?): ShortLink {
+    override fun create(url: URL, expiresAt: Long?, creator: ShortLinkUser): ShortLink {
         val shortCode = shortCodeGenerator.generate()
         val now = millis()
         val shortLink =
@@ -32,17 +32,17 @@ class RealShortLinkManager(
 
     override fun get(code: ShortCode) = runBlocking { shortLinkStore.get(code) }
 
-    override fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) = runBlocking {
-        shortLinkStore.update(updater, code, url)
+    override fun update(code: ShortCode, url: URL, updater: ShortLinkUser) = runBlocking {
+        shortLinkStore.update(code, url, updater)
         shortLinkStore.get(code)!!
     }
 
-    override fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) = runBlocking {
-        shortLinkStore.update(updater, code, expiresAt)
+    override fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) = runBlocking {
+        shortLinkStore.update(code, expiresAt, updater)
         shortLinkStore.get(code)!!
     }
 
-    override fun delete(deleter: ShortLinkUser?, code: ShortCode) = runBlocking {
-        shortLinkStore.delete(deleter, code)
+    override fun delete(code: ShortCode, deleter: ShortLinkUser) = runBlocking {
+        shortLinkStore.delete(code, deleter)
     }
 }

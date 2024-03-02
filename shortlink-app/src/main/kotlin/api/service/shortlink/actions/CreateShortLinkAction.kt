@@ -8,9 +8,9 @@ import java.net.URL
 class CreateShortLinkAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: Request): ShortLink {
         return shortLinkManager.create(
-            ShortLinkUser(request.username),
-            URL(request.url),
-            request.expiresAt
+            url = URL(request.url),
+            expiresAt = request.expiresAt,
+            creator = ShortLinkUser(request.username)
         )
     }
 

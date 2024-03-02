@@ -75,9 +75,8 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
     }
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
-        shortLink.owner?.identifier?.let {
+        shortLink.owner.identifier.let {
             require(!it.contains(DyShortLinkItem.DELIMITER)) { "Invalid owner identifier: $it" }
-            require(!it.contains(DyShortLinkItem.NO_USER)) { "Invalid owner identifier: $it" }
         }
         table.getItem(shortLink.code.toKey())?.let {
             throw ShortLinkStore.DuplicateShortCodeException(shortLink.code)
@@ -96,30 +95,30 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
         return shortLink
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) =
-        update(updater, code) { it.copy(url = url) }
+    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) =
+        update(code, updater) { it.copy(url = url) }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) =
-        update(updater, code) { it.copy(expiresAt = expiresAt) }
+    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) =
+        update(code, updater) { it.copy(expiresAt = expiresAt) }
 
-    private fun update(updater: ShortLinkUser?, code: ShortCode, update: (ShortLink) -> ShortLink) {
+    private fun update(code: ShortCode, updater: ShortLinkUser?, update: (ShortLink) -> ShortLink) {
         val existing =
             table.getItem(code.toKey())
                 ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
 
         val shortLink = existing.toShortLink()
-        if (shortLink.owner != null && shortLink.owner != updater) {
+        if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != updater) {
             throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
         table.putItem(update(shortLink).toDyShortLinkItem(existing.version))
     }
 
-    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
+    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
         val item =
             table.getItem(code.toKey())
                 ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         val shortLink = item.toShortLink()
-        if (shortLink.owner != null && shortLink.owner != deleter) {
+        if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != deleter) {
             throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
         table.deleteItem(code.toKey())

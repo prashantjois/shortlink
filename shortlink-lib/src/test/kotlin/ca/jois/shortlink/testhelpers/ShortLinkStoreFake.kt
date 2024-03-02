@@ -38,15 +38,15 @@ class ShortLinkStoreFake : ShortLinkStore {
         }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
+    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) {
         update(code) { it.copy(url = url) }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
+    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) {
         update(code) { it.copy(expiresAt = expiresAt) }
     }
 
-    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
+    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
         shortLinksByCode.remove(code)
     }
 

@@ -2,8 +2,7 @@ package ca.jois.shortlink.persistence.testhelpers
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
-import ca.jois.shortlink.persistence.ShortLinkStore
-import ca.jois.shortlink.persistence.ShortLinkStoreJdbc
+import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -43,19 +42,6 @@ object TestDatabase {
             .withInitScript("postgresql-init.sql")
     }
 
-    /** Test helper to wrap container starting and stopping. */
-    suspend fun initShortLinkStore(
-        container: JdbcDatabaseContainer<*>,
-        test: suspend (ShortLinkStore) -> Unit
-    ) {
-        container.start()
-        try {
-            test(ShortLinkStoreJdbc(container.hikariConfig()))
-        } finally {
-            container.stop()
-        }
-    }
-
     /**
      * Test helper to get a shortlink directly from the database. This allows you to test without
      * depending on application functionality to read the database.
@@ -82,6 +68,8 @@ object TestDatabase {
                 url = URL(rs.getString("url")),
                 createdAt = rs.getLong("created_at"),
                 expiresAt = expiresAt,
+                creator = ShortLinkUser(rs.getString("creator")),
+                owner = ShortLinkUser(rs.getString("owner"))
             )
         }
     }
@@ -94,7 +82,7 @@ object TestDatabase {
         shortLink: ShortLink = ShortLinkFactory.build()
     ): ShortLink {
         val insertSql =
-            "INSERT INTO shortlinks (code, url, created_at, expires_at, owner) VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO shortlinks (code, url, created_at, expires_at, creator, owner) VALUES (?, ?, ?, ?, ?, ?)"
 
         val connection = HikariDataSource(hikariConfig()).connection
         connection
@@ -104,8 +92,8 @@ object TestDatabase {
                 setString(2, shortLink.url.toString())
                 setLong(3, shortLink.createdAt)
                 shortLink.expiresAt?.let { setLong(4, it) } ?: setNull(4, java.sql.Types.BIGINT)
-                shortLink.owner?.let { setString(5, it.identifier) }
-                    ?: setNull(5, java.sql.Types.VARCHAR)
+                setString(5, shortLink.creator.identifier)
+                setString(6, shortLink.owner.identifier)
             }
             .executeUpdate()
 

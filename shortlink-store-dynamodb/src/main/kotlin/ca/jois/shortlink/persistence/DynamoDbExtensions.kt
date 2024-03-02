@@ -19,18 +19,12 @@ object DynamoDbExtensions {
             created_at = createdAt,
             expires_at = expiresAt ?: Long.MAX_VALUE,
             url = url.toString(),
-            owner = owner?.identifier,
-            creator = creator?.identifier,
+            owner = owner.identifier,
+            creator = creator.identifier,
             version = version,
         )
 
     fun DyShortLinkItem.toShortLink(): ShortLink {
-        val ownerIdentifier =
-            when (owner) {
-                DyShortLinkItem.NO_USER -> null
-                else -> owner
-            }
-
         val expiresAt =
             when (expires_at) {
                 Long.MAX_VALUE -> null
@@ -42,8 +36,8 @@ object DynamoDbExtensions {
             url = URL(url),
             createdAt = created_at!!,
             expiresAt = expiresAt,
-            creator = creator?.let { ShortLinkUser(it) },
-            owner = ownerIdentifier?.let { ShortLinkUser(it) },
+            creator = ShortLinkUser(creator!!),
+            owner = ShortLinkUser(owner!!),
         )
     }
 }

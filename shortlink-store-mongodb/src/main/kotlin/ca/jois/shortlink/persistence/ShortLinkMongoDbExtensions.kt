@@ -14,8 +14,8 @@ object ShortLinkMongoDbExtensions {
                 MongoDbFields.URL.fieldName to url.toString(),
                 MongoDbFields.CREATED_AT.fieldName to createdAt,
                 MongoDbFields.EXPIRES_AT.fieldName to expiresAt,
-                MongoDbFields.OWNER.fieldName to owner?.identifier,
-                MongoDbFields.CREATOR.fieldName to creator?.identifier
+                MongoDbFields.OWNER.fieldName to owner.identifier,
+                MongoDbFields.CREATOR.fieldName to creator.identifier
             )
         )
 
@@ -25,7 +25,7 @@ object ShortLinkMongoDbExtensions {
             url = URL(getString(MongoDbFields.URL.fieldName)),
             createdAt = getLong(MongoDbFields.CREATED_AT.fieldName),
             expiresAt = getLong(MongoDbFields.EXPIRES_AT.fieldName),
-            owner = getString(MongoDbFields.OWNER.fieldName)?.let { ShortLinkUser(it) },
-            creator = getString(MongoDbFields.CREATOR.fieldName)?.let { ShortLinkUser(it) }
+            owner = ShortLinkUser(getString(MongoDbFields.OWNER.fieldName)!!),
+            creator = ShortLinkUser(getString(MongoDbFields.CREATOR.fieldName)!!)
         )
 }

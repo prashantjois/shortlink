@@ -62,19 +62,19 @@ class ShortLinkStoreInMemory : ShortLinkStore {
         }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
-        update(updater, code) { it.copy(url = url) }
+    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) {
+        update(code, updater) { it.copy(url = url) }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
-        update(updater, code) { it.copy(expiresAt = expiresAt) }
+    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) {
+        update(code, updater) { it.copy(expiresAt = expiresAt) }
     }
 
-    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
+    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
         mutex.withLock {
             val shortLink =
                 shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
-            if (shortLink.owner != null && shortLink.owner != deleter) {
+            if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != deleter) {
                 throw ShortLinkStore.NotFoundOrNotPermittedException(code)
             }
             shortLinksByCode.remove(code)
@@ -82,14 +82,14 @@ class ShortLinkStoreInMemory : ShortLinkStore {
     }
 
     private suspend fun update(
-        updater: ShortLinkUser?,
         code: ShortCode,
+        updater: ShortLinkUser,
         modify: (ShortLink) -> ShortLink
     ): ShortLink {
         return mutex.withLock {
             val shortLink =
                 shortLinksByCode[code] ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
-            if (shortLink.owner != null && shortLink.owner != updater) {
+            if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != updater) {
                 throw ShortLinkStore.NotFoundOrNotPermittedException(code)
             }
             val modifiedShortLink = modify(shortLink)

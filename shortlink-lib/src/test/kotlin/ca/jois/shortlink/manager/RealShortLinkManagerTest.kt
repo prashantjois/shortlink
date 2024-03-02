@@ -121,14 +121,14 @@ class RealShortLinkManagerTest {
 
                 val newUrl = UrlFactory.random()
 
-                realShortLinkManager.update(null, code, url = newUrl)
+                realShortLinkManager.update(code, url = newUrl, ShortLinkUser.ANONYMOUS)
 
                 shortLinkStore.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
 
                 val newExpiry = 6.minutes.fromNow().toEpochMilli()
-                realShortLinkManager.update(null, code, expiresAt = newExpiry).let {
-                    assertThat(it.expiresAt).isEqualTo(newExpiry)
-                }
+                realShortLinkManager
+                    .update(code, expiresAt = newExpiry, updater = ShortLinkUser.ANONYMOUS)
+                    .let { assertThat(it.expiresAt).isEqualTo(newExpiry) }
             }
         }
     }
@@ -159,7 +159,7 @@ class RealShortLinkManagerTest {
                 val code = shortLink.code
                 shortLinkStore.create(shortLink)
 
-                realShortLinkManager.delete(null, code)
+                realShortLinkManager.delete(code, deleter = ShortLinkUser.ANONYMOUS)
 
                 assertThat(shortLinkStore.get(code)).isNull()
             }

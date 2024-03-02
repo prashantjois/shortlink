@@ -9,17 +9,17 @@ import java.net.URL
 class UpdateShortLinkAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: UrlRequest): ShortLink {
         return shortLinkManager.update(
-            ShortLinkUser(request.username),
-            ShortCode(request.code),
-            URL(request.url)
+            code = ShortCode(request.code),
+            url = URL(request.url),
+            updater = ShortLinkUser(request.username)
         )
     }
 
     fun handle(request: ExpiryRequest): ShortLink {
         return shortLinkManager.update(
-            ShortLinkUser(request.username),
-            ShortCode(request.code),
-            request.expiresAt,
+            code = ShortCode(request.code),
+            expiresAt = request.expiresAt,
+            updater = ShortLinkUser(request.username),
         )
     }
 

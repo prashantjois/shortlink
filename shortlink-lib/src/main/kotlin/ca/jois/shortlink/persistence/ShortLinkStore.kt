@@ -49,39 +49,36 @@ interface ShortLinkStore {
     /**
      * Updates the URL associated with the provided [ShortCode].
      *
-     * @param updater An optional user who is updating the short link. This will be used to
-     *   determine whether the user has permission to update the short link. If not provided, only
-     *   shortlinks with no owner can be updated.
      * @param code The [ShortCode] representing the short link to be updated.
      * @param url The new URL the code should point to
+     * @param updater An optional user who is updating the short link. This will be used to
+     *   determine whether the user has permission to update the short link.
      * @throws NotFoundOrNotPermittedException if the specified short code does not exist.
      */
-    suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL)
+    suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser)
 
     /**
      * Updates the expiry associated with the provided [ShortCode].
      *
-     * @param updater An optional user who is updating the short link. This will be used to
-     *   determine whether the user has permission to update the short link. If not provided, only
-     *   shortlinks with no owner can be updated.
      * @param code The [ShortCode] representing the short link to be updated.
      * @param expiresAt A new expiration timestamp for the short link (in milliseconds since epoch).
      *   If null, updates the code to not expire.
+     * @param updater An optional user who is updating the short link. This will be used to
+     *   determine whether the user has permission to update the short link.
      * @return The updated [ShortLink] object.
      * @throws NotFoundOrNotPermittedException if the specified short code does not exist.
      */
-    suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?)
+    suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser)
 
     /**
      * Deletes a short link using its unique [ShortCode].
      *
-     * @param deleter An optional user who is deleting the short link. This will be used to
-     *   determine whether the user has permission to delete the short link. If not provided, only
-     *   shortlinks with no owner can be deleted.
      * @param code The [ShortCode] representing the short link to be deleted.
+     * @param deleter An optional user who is deleting the short link. This will be used to
+     *   determine whether the user has permission to delete the short link.
      * @throws NotFoundOrNotPermittedException if the specified short code does not exist.
      */
-    suspend fun delete(deleter: ShortLinkUser?, code: ShortCode)
+    suspend fun delete(code: ShortCode, deleter: ShortLinkUser)
 
     class DuplicateShortCodeException(code: ShortCode) :
         RuntimeException("Link with code ${code.value} already exists")

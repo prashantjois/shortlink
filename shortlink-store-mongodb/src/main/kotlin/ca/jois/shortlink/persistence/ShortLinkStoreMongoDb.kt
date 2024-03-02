@@ -9,7 +9,6 @@ import com.mongodb.MongoWriteException
 import com.mongodb.client.MongoClients
 import com.mongodb.client.model.Filters.and
 import com.mongodb.client.model.Filters.eq
-import com.mongodb.client.model.Filters.exists
 import com.mongodb.client.model.Filters.gt
 import com.mongodb.client.model.Filters.or
 import com.mongodb.client.model.IndexOptions
@@ -92,10 +91,10 @@ class ShortLinkStoreMongoDb(
         }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, url: URL) {
+    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) {
         val updateResult =
             shortLinksCollection.updateOne(
-                modifyFilterWithOwner(updater, code),
+                modifyFilterWithOwner(code, updater),
                 Document("\$set", Document(MongoDbFields.URL.fieldName, url.toString()))
             )
         if (updateResult.matchedCount == 0L) {
@@ -103,10 +102,10 @@ class ShortLinkStoreMongoDb(
         }
     }
 
-    override suspend fun update(updater: ShortLinkUser?, code: ShortCode, expiresAt: Long?) {
+    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) {
         val updateResult =
             shortLinksCollection.updateOne(
-                modifyFilterWithOwner(updater, code),
+                modifyFilterWithOwner(code, updater),
                 Document("\$set", Document(MongoDbFields.EXPIRES_AT.fieldName, expiresAt))
             )
         if (updateResult.matchedCount == 0L) {
@@ -114,37 +113,23 @@ class ShortLinkStoreMongoDb(
         }
     }
 
-    override suspend fun delete(deleter: ShortLinkUser?, code: ShortCode) {
+    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
         val deleteResult =
             shortLinksCollection.deleteOne(
-                modifyFilterWithOwner(deleter, code),
+                modifyFilterWithOwner(code, deleter),
             )
         if (deleteResult.deletedCount == 0L) {
             throw ShortLinkStore.NotFoundOrNotPermittedException(code)
         }
     }
 
-    private fun modifyFilterWithOwner(user: ShortLinkUser?, code: ShortCode): Bson {
-        val filter =
-            when (user) {
-                null ->
-                    and(
-                        eq(MongoDbFields.CODE.fieldName, code.value),
-                        or(
-                            eq(MongoDbFields.OWNER.fieldName, null),
-                            exists(MongoDbFields.OWNER.fieldName, false)
-                        )
-                    )
-                else ->
-                    and(
-                        eq(MongoDbFields.CODE.fieldName, code.value),
-                        or(
-                            eq(MongoDbFields.OWNER.fieldName, null),
-                            exists(MongoDbFields.OWNER.fieldName, false),
-                            eq(MongoDbFields.OWNER.fieldName, user.identifier)
-                        )
-                    )
-            }
-        return filter
+    private fun modifyFilterWithOwner(code: ShortCode, user: ShortLinkUser): Bson {
+        return and(
+            eq(MongoDbFields.CODE.fieldName, code.value),
+            or(
+                eq(MongoDbFields.OWNER.fieldName, ShortLinkUser.ANONYMOUS.identifier),
+                eq(MongoDbFields.OWNER.fieldName, user.identifier)
+            )
+        )
     }
 }
