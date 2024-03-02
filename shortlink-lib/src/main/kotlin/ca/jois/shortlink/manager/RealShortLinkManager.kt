@@ -5,6 +5,7 @@ import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkStore
+import ca.jois.shortlink.persistence.ShortLinkStore.*
 import java.net.URL
 import java.time.Clock
 import kotlinx.coroutines.runBlocking
@@ -14,6 +15,13 @@ class RealShortLinkManager(
     private val shortCodeGenerator: ShortCodeGenerator,
     private val shortLinkStore: ShortLinkStore,
 ) : ShortLinkManager {
+    override fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String?
+    ): PaginatedResult<ShortLink> {
+        return runBlocking { shortLinkStore.listByOwner(owner, paginationKey) }
+    }
+
     override fun create(url: URL, expiresAt: Long?, creator: ShortLinkUser): ShortLink {
         val shortCode = shortCodeGenerator.generate()
         val now = millis()

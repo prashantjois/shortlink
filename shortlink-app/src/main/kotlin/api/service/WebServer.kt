@@ -16,6 +16,7 @@ import shortlinkapp.api.service.shortlink.ShortLinkRedirectService
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
+import shortlinkapp.api.service.shortlink.actions.ListShortLinksAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
 
 class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStore) {
@@ -25,6 +26,7 @@ class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStor
     private val getShortLinkAction: GetShortLinkAction
     private val updateShortLinkAction: UpdateShortLinkAction
     private val deleteShortLinkAction: DeleteShortLinkAction
+    private val listShortLinksAction: ListShortLinksAction
     private val shortLinkRedirectService: ShortLinkRedirectService
     private val shortLinkApiService: ShortLinkApiService
 
@@ -40,12 +42,14 @@ class WebServer(private val port: Int, private val shortLinkStore: ShortLinkStor
             getShortLinkAction = GetShortLinkAction(shortLinkManager)
             updateShortLinkAction = UpdateShortLinkAction(shortLinkManager)
             deleteShortLinkAction = DeleteShortLinkAction(shortLinkManager)
+            listShortLinksAction = ListShortLinksAction(shortLinkManager)
             shortLinkApiService =
                 ShortLinkApiService(
                     createShortLinkAction,
                     getShortLinkAction,
                     updateShortLinkAction,
                     deleteShortLinkAction,
+                    listShortLinksAction,
                 )
             shortLinkRedirectService = ShortLinkRedirectService(shortLinkManager)
         }

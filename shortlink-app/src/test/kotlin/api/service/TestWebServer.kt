@@ -4,7 +4,6 @@ import ca.jois.shortlink.generator.NaiveShortCodeGenerator
 import ca.jois.shortlink.generator.ShortCodeGenerator
 import ca.jois.shortlink.manager.RealShortLinkManager
 import ca.jois.shortlink.manager.ShortLinkManager
-import ca.jois.shortlink.persistence.ShortLinkStore
 import ca.jois.shortlink.persistence.ShortLinkStoreInMemory
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpMethod
@@ -19,6 +18,7 @@ import shortlinkapp.api.service.shortlink.ShortLinkRedirectService
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
+import shortlinkapp.api.service.shortlink.actions.ListShortLinksAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
 import shortlinkapp.util.json.adapter.JsonConverter
 import shortlinkapp.util.json.adapter.UrlAdapter
@@ -49,13 +49,14 @@ import shortlinkapp.util.json.adapter.UrlAdapter
  *  ```
  */
 class TestWebServer(clock: Clock) : ServerExtension() {
-    val shortLinkStore: ShortLinkStore
+    val shortLinkStore : ShortLinkStoreFake = ShortLinkStoreFake()
     val shortLinkManager: ShortLinkManager
     val shortCodeGenerator: ShortCodeGenerator
     val createShortLinkAction: CreateShortLinkAction
     val getShortLinkAction: GetShortLinkAction
     val updateShortLinkAction: UpdateShortLinkAction
     val deleteShortLinkAction: DeleteShortLinkAction
+    val listShortLinksAction: ListShortLinksAction
     val shortLinkRedirectService: ShortLinkRedirectService
     val shortLinkApiService: ShortLinkApiService
     val converter = JsonConverter(UrlAdapter())
@@ -63,7 +64,6 @@ class TestWebServer(clock: Clock) : ServerExtension() {
     init {
         with(clock) {
             shortCodeGenerator = NaiveShortCodeGenerator()
-            shortLinkStore = ShortLinkStoreInMemory()
             shortLinkManager =
                 RealShortLinkManager(
                     shortCodeGenerator = shortCodeGenerator,
@@ -73,12 +73,14 @@ class TestWebServer(clock: Clock) : ServerExtension() {
             getShortLinkAction = GetShortLinkAction(shortLinkManager)
             updateShortLinkAction = UpdateShortLinkAction(shortLinkManager)
             deleteShortLinkAction = DeleteShortLinkAction(shortLinkManager)
+            listShortLinksAction = ListShortLinksAction(shortLinkManager)
             shortLinkApiService =
                 ShortLinkApiService(
                     createShortLinkAction,
                     getShortLinkAction,
                     updateShortLinkAction,
                     deleteShortLinkAction,
+                    listShortLinksAction,
                 )
             shortLinkRedirectService = ShortLinkRedirectService(shortLinkManager)
         }
@@ -150,4 +152,11 @@ class TestWebServer(clock: Clock) : ServerExtension() {
         }
         return params.appendQueryString(appendedPath).toString()
     }
+
+    class ShortLinkStoreFake : ShortLinkStoreInMemory() {
+        fun clear() {
+            shortLinksByCode.clear()
+        }
+    }
+
 }

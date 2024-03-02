@@ -11,7 +11,67 @@ This module allows you to run a local server that exposes CRUD APIs to manage sh
 
 ## API
 
-These are served from the `/api` path
+These are served from the `/api` path.
+
+### GET /listByOwner
+
+Request:
+
+```json
+{
+  "owner": "user"
+}
+```
+
+Response:
+
+
+```json
+{
+  "entries": [
+    {
+      "creator": {
+        "identifier": "user"
+      },
+      "owner": {
+        "identifier": "user"
+      },
+      "url": "https://example.com/new",
+      "code": {
+        "value": "cgv0"
+      },
+      "createdAt": 1707596795212,
+      "expiresAt": 2707010574211
+    },
+    {
+      "creator": {
+        "identifier": "user"
+      },
+      "owner": {
+        "identifier": "user"
+      },
+      "url": "https://example.com",
+      "code": {
+        "value": "B65Z"
+      },
+      "createdAt": 1707608422227
+    },
+    {
+      "creator": {
+        "identifier": "user"
+      },
+      "owner": {
+        "identifier": "user"
+      },
+      "url": "https://example.com",
+      "code": {
+        "value": "g_z8"
+      },
+      "createdAt": 1709408639348
+    }
+  ]
+}
+```
 
 ### POST /create
 

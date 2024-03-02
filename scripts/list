@@ -1,0 +1,6 @@
+#!/bin/bash
+
+curl --request GET 'localhost:8080/api/listByOwner' \
+-H 'Content-Type: application/json' \
+-d "{\"owner\":\"$1\"}"
+

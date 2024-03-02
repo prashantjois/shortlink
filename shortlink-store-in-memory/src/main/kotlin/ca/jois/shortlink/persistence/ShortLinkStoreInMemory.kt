@@ -9,9 +9,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** A very simple in-memory storage for Short Links. Not safe for multiprocess applications. */
-class ShortLinkStoreInMemory : ShortLinkStore {
+open class ShortLinkStoreInMemory : ShortLinkStore {
     private val mutex = Mutex()
-    private val shortLinksByCode = HashMap<ShortCode, ShortLink>()
+    protected val shortLinksByCode = HashMap<ShortCode, ShortLink>()
 
     override suspend fun listByOwner(
         owner: ShortLinkUser,

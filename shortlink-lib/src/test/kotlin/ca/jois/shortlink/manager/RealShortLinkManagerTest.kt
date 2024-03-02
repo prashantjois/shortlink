@@ -17,6 +17,29 @@ import org.junit.jupiter.api.Test
 
 class RealShortLinkManagerTest {
     @Nested
+    @DisplayName("RealShortLinkManager#listByOwner")
+    inner class ListByOwnerTest {
+        @Test
+        fun `it should retrieve all short links owned by the given user`() = runTest {
+            with(TestClock()) {
+                val shortLinkStore = ShortLinkStoreFake()
+                val realShortLinkManager =
+                    RealShortLinkManager(
+                        shortCodeGenerator = NaiveShortCodeGenerator(),
+                        shortLinkStore = shortLinkStore
+                    )
+                val user = ShortLinkUser("user")
+                val shortLinks = (1..5).map { ShortLinkFactory.build(owner = user) }
+                shortLinks.forEach { shortLinkStore.create(it) }
+
+                val result = realShortLinkManager.listByOwner(user)
+
+                assertThat(result.entries).containsExactlyInAnyOrderElementsOf(shortLinks)
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("RealShortLinkManager#create")
     inner class CreateTest {
         @Test

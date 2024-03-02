@@ -9,6 +9,7 @@ import com.linecorp.armeria.server.annotation.RequestConverter
 import shortlinkapp.api.service.shortlink.actions.CreateShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.DeleteShortLinkAction
 import shortlinkapp.api.service.shortlink.actions.GetShortLinkAction
+import shortlinkapp.api.service.shortlink.actions.ListShortLinksAction
 import shortlinkapp.api.service.shortlink.actions.UpdateShortLinkAction
 import shortlinkapp.util.json.adapter.ArmeriaRequestConverter
 import shortlinkapp.util.json.adapter.JsonConverter
@@ -19,6 +20,7 @@ class ShortLinkApiService(
     private val getShortLinkAction: GetShortLinkAction,
     private val updateShortLinkAction: UpdateShortLinkAction,
     private val deleteShortLinkAction: DeleteShortLinkAction,
+    private val listShortLinksAction: ListShortLinksAction,
 ) {
     private val responseConverter = JsonConverter(UrlAdapter())
 
@@ -48,4 +50,9 @@ class ShortLinkApiService(
         deleteShortLinkAction.handle(request)
         return responseConverter.empty()
     }
+
+    @Get("/listByOwner")
+    @RequestConverter(ArmeriaRequestConverter::class)
+    fun create(request: ListShortLinksAction.Request) =
+        responseConverter.toHttpResponse(listShortLinksAction.handle(request))
 }

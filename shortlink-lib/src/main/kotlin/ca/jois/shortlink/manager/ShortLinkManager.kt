@@ -3,6 +3,7 @@ package ca.jois.shortlink.manager
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
 import ca.jois.shortlink.model.ShortLinkUser
+import ca.jois.shortlink.persistence.ShortLinkStore.PaginatedResult
 import java.net.URL
 
 /**
@@ -12,6 +13,20 @@ import java.net.URL
  * retrieval, update, and deletion.
  */
 interface ShortLinkManager {
+    /**
+     * Retrieves all [ShortLink] entries in the store that are owned by the given [owner] in a
+     * paginated manner.
+     *
+     * @param owner The owner of the short links to retrieve.
+     * @param paginationKey A key that can be used to retrieve the next page of short links. This
+     *   value is initially null to start at the first page, and subsequent calls will use the value
+     *   returned in the previous call to retrieve the next page.
+     */
+    fun listByOwner(
+        owner: ShortLinkUser,
+        paginationKey: String? = null,
+    ): PaginatedResult<ShortLink>
+
     /**
      * Creates a new short link for the given URL.
      *
