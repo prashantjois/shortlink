@@ -1,10 +1,12 @@
 CREATE TABLE shortlinks (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    owner VARCHAR(255),
-    creator VARCHAR(255),
-    code VARCHAR(10) UNIQUE,
-    url TEXT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    grp VARCHAR(255) NOT NULL,
+    code VARCHAR(10)  NOT NULL,
+    owner VARCHAR(255) NOT NULL,
+    creator VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
     created_at BIGINT NOT NULL,
     expires_at BIGINT,
-    UNIQUE(code)
+
+    UNIQUE INDEX grp_code_unique (grp, code)
 );

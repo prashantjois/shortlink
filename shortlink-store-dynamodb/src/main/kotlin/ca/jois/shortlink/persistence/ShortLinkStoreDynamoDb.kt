@@ -2,7 +2,10 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
+import ca.jois.shortlink.persistence.DynamoDbExtensions.groupOwnerString
+import ca.jois.shortlink.persistence.DynamoDbExtensions.partitionKeyString
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toDyShortLinkItem
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toKey
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toShortLink
@@ -44,15 +47,18 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
         client.table(DyShortLinkItem.TABLE_NAME, TableSchema.fromBean(DyShortLinkItem::class.java))
 
     override suspend fun listByOwner(
+        group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,
         limit: Int?,
     ): PaginatedResult<ShortLink> {
         val page =
             table
-                .index(DyShortLinkItem.Indexes.GSI.OWNER_INDEX)
+                .index(DyShortLinkItem.Indexes.GSI.GROUP_OWNER_INDEX)
                 .query { builder ->
-                    builder.queryConditional(QueryConditional.keyEqualTo(owner.toKey()))
+                    builder.queryConditional(
+                        QueryConditional.keyEqualTo(groupOwnerString(owner, group).toKey())
+                    )
                     paginationKey?.let {
                         builder.exclusiveStartKey(
                             ListByOwnerPaginationKey.decode(it).toExclusiveStartKey()
@@ -64,13 +70,7 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
 
         val shortLinks = page.items().map { it.toShortLink() }
         val nextPaginationKey =
-            page.lastEvaluatedKey()?.let {
-                ListByOwnerPaginationKey(
-                        it[DyShortLinkItem::code.name]!!.s(),
-                        it[DyShortLinkItem::owner.name]!!.s()
-                    )
-                    .encode()
-            }
+            page.lastEvaluatedKey()?.let { ListByOwnerPaginationKey(it).encode() }
         return PaginatedResult(shortLinks, nextPaginationKey)
     }
 
@@ -78,16 +78,20 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
         shortLink.owner.identifier.let {
             require(!it.contains(DyShortLinkItem.DELIMITER)) { "Invalid owner identifier: $it" }
         }
-        table.getItem(shortLink.code.toKey())?.let {
-            throw ShortLinkStore.DuplicateShortCodeException(shortLink.code)
+        table.getItem(shortLink.partitionKeyString.toKey())?.let {
+            throw ShortLinkStore.DuplicateShortCodeException(shortLink.group, shortLink.code)
         }
         table.putItem(shortLink.toDyShortLinkItem())
         return shortLink
     }
 
     context(Clock)
-    override suspend fun get(code: ShortCode, excludeExpired: Boolean): ShortLink? {
-        val item = table.getItem(code.toKey()) ?: return null
+    override suspend fun get(
+        code: ShortCode,
+        group: ShortLinkGroup,
+        excludeExpired: Boolean
+    ): ShortLink? {
+        val item = table.getItem(partitionKeyString(code, group).toKey()) ?: return null
         val shortLink = item.toShortLink()
         if (excludeExpired && shortLink.isExpired()) {
             return null
@@ -95,41 +99,53 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
         return shortLink
     }
 
-    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) =
-        update(code, updater) { it.copy(url = url) }
+    override suspend fun update(
+        code: ShortCode,
+        url: URL,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ) = update(code, group, updater) { it.copy(url = url) }
 
-    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) =
-        update(code, updater) { it.copy(expiresAt = expiresAt) }
+    override suspend fun update(
+        code: ShortCode,
+        expiresAt: Long?,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ) = update(code, group, updater) { it.copy(expiresAt = expiresAt) }
 
-    private fun update(code: ShortCode, updater: ShortLinkUser?, update: (ShortLink) -> ShortLink) {
+    private fun update(
+        code: ShortCode,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser?,
+        update: (ShortLink) -> ShortLink
+    ) {
         val existing =
-            table.getItem(code.toKey())
-                ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            table.getItem(partitionKeyString(code, group).toKey())
+                ?: throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
 
         val shortLink = existing.toShortLink()
         if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != updater) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
         table.putItem(update(shortLink).toDyShortLinkItem(existing.version))
     }
 
-    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
+    override suspend fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser) {
+        val key = partitionKeyString(code, group).toKey()
         val item =
-            table.getItem(code.toKey())
-                ?: throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            table.getItem(key) ?: throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         val shortLink = item.toShortLink()
         if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != deleter) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
-        table.deleteItem(code.toKey())
+        table.deleteItem(key)
     }
     /**
      * Encapsulates the pagination key used to retrieve the next page of results from a paginated
      * query when listing short links by owner.
      */
     private data class ListByOwnerPaginationKey(
-        val code: String,
-        val owner: String,
+        val lastEvaluatedKey: MutableMap<String, AttributeValue>,
     ) {
         companion object {
             private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -140,10 +156,11 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
 
         fun encode() = adapter.toJson(this).toBase64()
 
-        fun toExclusiveStartKey() =
-            mapOf(
-                DyShortLinkItem::code.name to AttributeValue.fromS(code),
-                DyShortLinkItem::owner.name to AttributeValue.fromS(owner),
-            )
+        fun toExclusiveStartKey(): Map<String, AttributeValue> {
+            val keys =
+                listOf(DyShortLinkItem::partition_key.name, DyShortLinkItem::group_owner.name)
+
+            return keys.associateWith { AttributeValue.fromS(lastEvaluatedKey[it]!!.s()) }
+        }
     }
 }

@@ -2,6 +2,7 @@ package ca.jois.shortlink.manager
 
 import ca.jois.shortlink.generator.NaiveShortCodeGenerator
 import ca.jois.shortlink.model.ShortCode
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.testhelpers.ShortLinkStoreFake
 import ca.jois.shortlink.testhelpers.clock.TestClock
@@ -28,11 +29,12 @@ class RealShortLinkManagerTest {
                         shortCodeGenerator = NaiveShortCodeGenerator(),
                         shortLinkStore = shortLinkStore
                     )
+                val group = ShortLinkGroup.DEFAULT
                 val user = ShortLinkUser("user")
                 val shortLinks = (1..5).map { ShortLinkFactory.build(owner = user) }
                 shortLinks.forEach { shortLinkStore.create(it) }
 
-                val result = realShortLinkManager.listByOwner(user)
+                val result = realShortLinkManager.listByOwner(group, user)
 
                 assertThat(result.entries).containsExactlyInAnyOrderElementsOf(shortLinks)
             }
@@ -58,7 +60,7 @@ class RealShortLinkManagerTest {
                         url = url,
                         expiresAt = 5.minutes.fromNow().toEpochMilli()
                     )
-                val createdShortLink = shortLinkStore.get(shortLink.code)
+                val createdShortLink = shortLinkStore.get(shortLink.code, shortLink.group)
                 assertThat(createdShortLink).isEqualTo(shortLink)
             }
         }
@@ -85,7 +87,7 @@ class RealShortLinkManagerTest {
         @Test
         fun `it should retrieve an existing ShortLink`() = runTest {
             val shortLink = shortLinkStore.create(ShortLinkFactory.build())
-            realShortLinkManager.get(shortLink.code).let {
+            realShortLinkManager.get(shortLink.code, shortLink.group).let {
                 assertThat(it).isNotNull
                 assertThat(it).isEqualTo(shortLink)
             }
@@ -93,7 +95,8 @@ class RealShortLinkManagerTest {
 
         @Test
         fun `it should return null if the code does not exist`() {
-            assertThat(realShortLinkManager.get(ShortCode("random"))).isNull()
+            assertThat(realShortLinkManager.get(ShortCode("random"), ShortLinkGroup.DEFAULT))
+                .isNull()
         }
 
         @Test
@@ -104,14 +107,14 @@ class RealShortLinkManagerTest {
                         shortLinkStore.create(it)
                     }
 
-                realShortLinkManager.get(shortLink.code).let {
+                realShortLinkManager.get(shortLink.code, shortLink.group).let {
                     assertThat(it).isNotNull
                     assertThat(it).isEqualTo(shortLink)
                 }
 
                 advanceClockBy(6.minutes)
 
-                assertThat(realShortLinkManager.get(shortLink.code)).isNull()
+                assertThat(realShortLinkManager.get(shortLink.code, shortLink.group)).isNull()
             }
         }
     }
@@ -144,13 +147,25 @@ class RealShortLinkManagerTest {
 
                 val newUrl = UrlFactory.random()
 
-                realShortLinkManager.update(code, url = newUrl, ShortLinkUser.ANONYMOUS)
+                realShortLinkManager.update(
+                    code,
+                    url = newUrl,
+                    group = shortLink.group,
+                    updater = ShortLinkUser.ANONYMOUS
+                )
 
-                shortLinkStore.get(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
+                shortLinkStore.get(code, shortLink.group)!!.let {
+                    assertThat(it.url).isEqualTo(newUrl)
+                }
 
                 val newExpiry = 6.minutes.fromNow().toEpochMilli()
                 realShortLinkManager
-                    .update(code, expiresAt = newExpiry, updater = ShortLinkUser.ANONYMOUS)
+                    .update(
+                        code,
+                        expiresAt = newExpiry,
+                        group = shortLink.group,
+                        updater = ShortLinkUser.ANONYMOUS
+                    )
                     .let { assertThat(it.expiresAt).isEqualTo(newExpiry) }
             }
         }
@@ -182,9 +197,13 @@ class RealShortLinkManagerTest {
                 val code = shortLink.code
                 shortLinkStore.create(shortLink)
 
-                realShortLinkManager.delete(code, deleter = ShortLinkUser.ANONYMOUS)
+                realShortLinkManager.delete(
+                    code,
+                    group = shortLink.group,
+                    deleter = ShortLinkUser.ANONYMOUS
+                )
 
-                assertThat(shortLinkStore.get(code)).isNull()
+                assertThat(shortLinkStore.get(code, shortLink.group)).isNull()
             }
         }
     }

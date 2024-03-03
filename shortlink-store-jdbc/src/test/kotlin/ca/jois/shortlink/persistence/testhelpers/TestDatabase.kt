@@ -2,7 +2,9 @@ package ca.jois.shortlink.persistence.testhelpers
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
+import ca.jois.shortlink.persistence.DbFields
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -46,30 +48,38 @@ object TestDatabase {
      * Test helper to get a shortlink directly from the database. This allows you to test without
      * depending on application functionality to read the database.
      */
-    fun JdbcDatabaseContainer<*>.getShortLinkDirect(code: ShortCode): ShortLink? {
-        val selectSql = "SELECT * FROM shortlinks WHERE code = ?"
+    fun JdbcDatabaseContainer<*>.getShortLinkDirect(
+        code: ShortCode,
+        group: ShortLinkGroup
+    ): ShortLink? {
+        val selectSql =
+            "SELECT * FROM shortlinks WHERE ${DbFields.CODE.fieldName} = ? AND ${DbFields.GROUP.fieldName} = ?"
 
         val connection = HikariDataSource(hikariConfig()).connection
         val stmt: PreparedStatement =
-            connection.prepareStatement(selectSql).apply { setString(1, code.value) }
+            connection.prepareStatement(selectSql).apply {
+                setString(1, code.value)
+                setString(2, group.name)
+            }
 
         stmt.executeQuery().let { rs ->
             if (!rs.next()) {
                 return null
             }
             val expiresAt =
-                when (val expiresAtRaw = rs.getLong("expires_at")) {
+                when (val expiresAtRaw = rs.getLong(DbFields.EXPIRES_AT.fieldName)) {
                     0L -> null
                     else -> expiresAtRaw
                 }
 
             return ShortLink(
-                code = ShortCode(rs.getString("code")),
-                url = URL(rs.getString("url")),
-                createdAt = rs.getLong("created_at"),
+                code = ShortCode(rs.getString(DbFields.CODE.fieldName)),
+                url = URL(rs.getString(DbFields.URL.fieldName)),
+                createdAt = rs.getLong(DbFields.CREATED_AT.fieldName),
                 expiresAt = expiresAt,
-                creator = ShortLinkUser(rs.getString("creator")),
-                owner = ShortLinkUser(rs.getString("owner"))
+                creator = ShortLinkUser(rs.getString(DbFields.CREATOR.fieldName)),
+                owner = ShortLinkUser(rs.getString(DbFields.OWNER.fieldName)),
+                group = ShortLinkGroup(rs.getString(DbFields.GROUP.fieldName)),
             )
         }
     }
@@ -81,19 +91,31 @@ object TestDatabase {
     fun JdbcDatabaseContainer<*>.createShortLinkDirect(
         shortLink: ShortLink = ShortLinkFactory.build()
     ): ShortLink {
-        val insertSql =
-            "INSERT INTO shortlinks (code, url, created_at, expires_at, creator, owner) VALUES (?, ?, ?, ?, ?, ?)"
+        val fieldNames =
+            listOf(
+                    DbFields.GROUP,
+                    DbFields.CODE,
+                    DbFields.URL,
+                    DbFields.CREATED_AT,
+                    DbFields.EXPIRES_AT,
+                    DbFields.CREATOR,
+                    DbFields.OWNER,
+                )
+                .joinToString(", ") { it.fieldName }
+
+        val insertSql = "INSERT INTO shortlinks ($fieldNames) VALUES (?, ?, ?, ?, ?, ?, ?)"
 
         val connection = HikariDataSource(hikariConfig()).connection
         connection
             .prepareStatement(insertSql)
             .apply {
-                setString(1, shortLink.code.value)
-                setString(2, shortLink.url.toString())
-                setLong(3, shortLink.createdAt)
-                shortLink.expiresAt?.let { setLong(4, it) } ?: setNull(4, java.sql.Types.BIGINT)
-                setString(5, shortLink.creator.identifier)
-                setString(6, shortLink.owner.identifier)
+                setString(1, shortLink.group.name)
+                setString(2, shortLink.code.value)
+                setString(3, shortLink.url.toString())
+                setLong(4, shortLink.createdAt)
+                shortLink.expiresAt?.let { setLong(5, it) } ?: setNull(5, java.sql.Types.BIGINT)
+                setString(6, shortLink.creator.identifier)
+                setString(7, shortLink.owner.identifier)
             }
             .executeUpdate()
 

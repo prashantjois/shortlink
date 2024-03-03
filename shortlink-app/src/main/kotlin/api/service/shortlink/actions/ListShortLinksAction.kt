@@ -2,17 +2,26 @@ package shortlinkapp.api.service.shortlink.actions
 
 import ca.jois.shortlink.manager.ShortLinkManager
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkStore
 
 class ListShortLinksAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: Request): Response {
         return Response.of(
-            shortLinkManager.listByOwner(request.ownerAsShortLinkUser(), request.paginationKey)
+            shortLinkManager.listByOwner(
+                ShortLinkGroup(request.group),
+                request.ownerAsShortLinkUser(),
+                request.paginationKey
+            )
         )
     }
 
-    data class Request(val owner: String? = null, val paginationKey: String? = null) {
+    data class Request(
+        val group: String,
+        val owner: String? = null,
+        val paginationKey: String? = null,
+    ) {
         fun ownerAsShortLinkUser() = owner?.let { ShortLinkUser(it) } ?: ShortLinkUser.ANONYMOUS
     }
 

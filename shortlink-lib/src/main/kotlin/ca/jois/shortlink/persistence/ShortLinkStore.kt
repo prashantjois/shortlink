@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import java.net.URL
 import java.time.Clock
@@ -23,6 +24,7 @@ interface ShortLinkStore {
      * @param owner The owner of the short links to retrieve.
      */
     suspend fun listByOwner(
+        group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String? = null,
         limit: Int? = null,
@@ -44,7 +46,11 @@ interface ShortLinkStore {
      * @param excludeExpired Return null if a matching entry exists but is expired
      */
     context(Clock)
-    suspend fun get(code: ShortCode, excludeExpired: Boolean = true): ShortLink?
+    suspend fun get(
+        code: ShortCode,
+        group: ShortLinkGroup,
+        excludeExpired: Boolean = true
+    ): ShortLink?
 
     /**
      * Updates the URL associated with the provided [ShortCode].
@@ -55,7 +61,7 @@ interface ShortLinkStore {
      *   determine whether the user has permission to update the short link.
      * @throws NotFoundOrNotPermittedException if the specified short code does not exist.
      */
-    suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser)
+    suspend fun update(code: ShortCode, url: URL, group: ShortLinkGroup, updater: ShortLinkUser)
 
     /**
      * Updates the expiry associated with the provided [ShortCode].
@@ -68,7 +74,12 @@ interface ShortLinkStore {
      * @return The updated [ShortLink] object.
      * @throws NotFoundOrNotPermittedException if the specified short code does not exist.
      */
-    suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser)
+    suspend fun update(
+        code: ShortCode,
+        expiresAt: Long?,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    )
 
     /**
      * Deletes a short link using its unique [ShortCode].
@@ -78,13 +89,13 @@ interface ShortLinkStore {
      *   determine whether the user has permission to delete the short link.
      * @throws NotFoundOrNotPermittedException if the specified short code does not exist.
      */
-    suspend fun delete(code: ShortCode, deleter: ShortLinkUser)
+    suspend fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser)
 
-    class DuplicateShortCodeException(code: ShortCode) :
-        RuntimeException("Link with code ${code.value} already exists")
+    class DuplicateShortCodeException(group: ShortLinkGroup, code: ShortCode) :
+        RuntimeException("Link with code ${code.value} already exists in group ${group.name}")
 
-    class NotFoundOrNotPermittedException(code: ShortCode) :
+    class NotFoundOrNotPermittedException(group: ShortLinkGroup, code: ShortCode) :
         RuntimeException(
-            "ShortLink with code ${code.value} not found or user not permitted to modify."
+            "ShortLink with code ${code.value} in group ${group.name} not found or user not permitted to modify."
         )
 }

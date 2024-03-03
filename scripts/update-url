@@ -10,4 +10,4 @@ fi
 
 curl --request PUT 'localhost:8080/api/update/url' \
 -H 'Content-Type: application/json' \
--d "{\"username\":\"prashant\", \"code\": \"$1\", \"url\":\"$2\"}"
+-d "{\"username\":\"prashant\", \"code\": \"$1\", \"url\":\"$2\",\"group\":\"$3\"}"

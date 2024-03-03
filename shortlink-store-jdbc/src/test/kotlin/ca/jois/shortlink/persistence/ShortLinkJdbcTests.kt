@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.persistence.testhelpers.TestDatabase
 import ca.jois.shortlink.persistence.testhelpers.TestDatabase.createShortLinkDirect
 import ca.jois.shortlink.persistence.testhelpers.TestDatabase.getShortLinkDirect
@@ -69,8 +70,8 @@ abstract class ShortLinkStoreJdbcTest(private val container: JdbcDatabaseContain
         container.stop()
     }
 
-    override suspend fun getDirect(code: ShortCode): ShortLink? {
-        return container.getShortLinkDirect(code)
+    override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink? {
+        return container.getShortLinkDirect(code, group)
     }
 
     override suspend fun createDirect(shortLink: ShortLink): ShortLink {

@@ -2,7 +2,9 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
+import ca.jois.shortlink.persistence.ShortLinkStore.NotFoundOrNotPermittedException
 import ca.jois.shortlink.testhelpers.clock.TestClock
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import ca.jois.shortlink.testhelpers.factory.UrlFactory
@@ -32,7 +34,7 @@ interface ShortLinkStoreTest {
      * @param code The unique short code identifying the [ShortLink] to retrieve.
      * @return The [ShortLink] associated with the given code, or `null` if not found.
      */
-    suspend fun getDirect(code: ShortCode): ShortLink?
+    suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink?
 
     /**
      * Concrete implementations should implement this to creates a new [ShortLink] directly in the
@@ -46,24 +48,35 @@ interface ShortLinkStoreTest {
 
     @Test
     fun `list by owners should get all the shortlinks for a given owner`() = runTest {
+        val group = ShortLinkGroup.DEFAULT
         val owner = ShortLinkUser("Someone")
-        val shortLinksForOwner = (1..5).map { createDirect(ShortLinkFactory.build(owner = owner)) }
-        val otherShortLinks = (1..5).map { createDirect(ShortLinkFactory.build()) }
+        val shortLinksForOwner =
+            (1..5).map { createDirect(ShortLinkFactory.build(group = group, owner = owner)) }
+        val shortLinksByDifferentOwner =
+            (1..5).map {
+                createDirect(ShortLinkFactory.build(group = group, owner = ShortLinkUser("other")))
+            }
+        val shortLinksByDifferentGroup =
+            (1..5).map {
+                createDirect(ShortLinkFactory.build(group = ShortLinkGroup("other"), owner = owner))
+            }
 
-        shortLinkStore.listByOwner(owner).let {
+        shortLinkStore.listByOwner(group, owner).let {
             assertThat(it.entries).containsExactlyInAnyOrder(*shortLinksForOwner.toTypedArray())
-            assertThat(it.entries).doesNotContain(*otherShortLinks.toTypedArray())
+            assertThat(it.entries).doesNotContain(*shortLinksByDifferentOwner.toTypedArray())
+            assertThat(it.entries).doesNotContain(*shortLinksByDifferentGroup.toTypedArray())
         }
     }
 
     @Test
     fun `list by owners should return paginated results`() = runTest {
+        val group = ShortLinkGroup.DEFAULT
         val owner = ShortLinkUser("Someone")
         val shortLinksForOwner = (1..5).map { createDirect(ShortLinkFactory.build(owner = owner)) }
         val otherShortLinks = (1..5).map { createDirect(ShortLinkFactory.build()) }
 
         val paginationKey =
-            shortLinkStore.listByOwner(owner, limit = 3).let {
+            shortLinkStore.listByOwner(group, owner, limit = 3).let {
                 assertThat(it.entries).hasSize(3)
                 assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
                 assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
@@ -71,7 +84,7 @@ interface ShortLinkStoreTest {
                 it.paginationKey
             }
 
-        shortLinkStore.listByOwner(owner, limit = 3, paginationKey = paginationKey).let {
+        shortLinkStore.listByOwner(group, owner, limit = 3, paginationKey = paginationKey).let {
             assertThat(it.entries).hasSize(2)
             assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
             assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
@@ -80,11 +93,25 @@ interface ShortLinkStoreTest {
     }
 
     @Test
-    fun `shortlink should be saved`() = runTest {
+    fun `a new shortlink should be created`() = runTest {
         val shortLink = ShortLinkFactory.build()
         shortLinkStore.create(shortLink)
 
-        getDirect(shortLink.code).let { assertThat(it).isNotNull }
+        getDirect(shortLink.code, shortLink.group).let { assertThat(it).isNotNull }
+    }
+
+    @Test
+    fun `a shortlink with the same code but different group should be allowed`() = runTest {
+        val code = ShortCode("same")
+
+        val shortLink = ShortLinkFactory.build(code = code)
+        val shortLinkOtherGroup = shortLink.copy(code = code, group = ShortLinkGroup("other"))
+
+        shortLinkStore.create(shortLink)
+        shortLinkStore.create(shortLinkOtherGroup)
+
+        getDirect(code, shortLink.group).let { assertThat(it).isNotNull }
+        getDirect(code, shortLinkOtherGroup.group).let { assertThat(it).isNotNull }
     }
 
     @Test
@@ -101,12 +128,22 @@ interface ShortLinkStoreTest {
         with(TestClock()) {
             val shortLink = createDirect()
 
-            with(shortLinkStore.get(shortLink.code)!!) {
+            with(shortLinkStore.get(shortLink.code, shortLink.group)!!) {
                 assertThat(url).isEqualTo(shortLink.url)
                 assertThat(code).isEqualTo(shortLink.code)
                 assertThat(createdAt).isEqualTo(shortLink.createdAt)
                 assertThat(expiresAt).isEqualTo(shortLink.expiresAt)
             }
+        }
+    }
+
+    @Test
+    fun `retrieving a shortlink should differentiate by group`() = runTest {
+        with(TestClock()) {
+            val shortLink = createDirect(ShortLinkFactory.build(group = ShortLinkGroup("group")))
+
+            assertThat(shortLinkStore.get(shortLink.code, shortLink.group)).isNotNull
+            assertThat(shortLinkStore.get(shortLink.code, ShortLinkGroup("other"))).isNull()
         }
     }
 
@@ -118,11 +155,11 @@ interface ShortLinkStoreTest {
 
             advanceClockBy(5.minutes)
 
-            assertThat(shortLinkStore.get(shortLink.code)).isNotNull
+            assertThat(shortLinkStore.get(shortLink.code, shortLink.group)).isNotNull
 
             advanceClockBy(1.seconds)
 
-            assertThat(shortLinkStore.get(shortLink.code)).isNull()
+            assertThat(shortLinkStore.get(shortLink.code, shortLink.group)).isNull()
         }
     }
 
@@ -135,9 +172,10 @@ interface ShortLinkStoreTest {
 
             advanceClockBy(6.minutes)
 
-            assertThat(shortLinkStore.get(shortLink.code)).isNull()
+            assertThat(shortLinkStore.get(shortLink.code, shortLink.group)).isNull()
 
-            assertThat(shortLinkStore.get(shortLink.code, excludeExpired = false)).isNotNull
+            assertThat(shortLinkStore.get(shortLink.code, shortLink.group, excludeExpired = false))
+                .isNotNull
         }
     }
 
@@ -146,30 +184,88 @@ interface ShortLinkStoreTest {
         with(TestClock()) {
             val shortLink = ShortLinkFactory.build(expiresAt = 5.minutes.fromNow().toEpochMilli())
             val code = shortLink.code
+            val group = shortLink.group
 
             createDirect(shortLink)
 
             val newUrl = UrlFactory.random()
             val newExpiresAt = 6.minutes.fromNow().toEpochMilli()
 
-            shortLinkStore.update(code, url = newUrl, updater = ShortLinkUser.ANONYMOUS)
-            getDirect(code)!!.let { assertThat(it.url).isEqualTo(newUrl) }
-            shortLinkStore.update(code, expiresAt = newExpiresAt, updater = ShortLinkUser.ANONYMOUS)
-            getDirect(code)!!.let { assertThat(it.expiresAt).isEqualTo(newExpiresAt) }
+            shortLinkStore.update(
+                code,
+                url = newUrl,
+                group = group,
+                updater = ShortLinkUser.ANONYMOUS
+            )
+            getDirect(code, group)!!.let { assertThat(it.url).isEqualTo(newUrl) }
+            shortLinkStore.update(
+                code,
+                expiresAt = newExpiresAt,
+                group = group,
+                updater = ShortLinkUser.ANONYMOUS
+            )
+            getDirect(code, group)!!.let { assertThat(it.expiresAt).isEqualTo(newExpiresAt) }
         }
     }
 
     @Test
     fun `An exception should be thrown when trying to update a shortlink if the code does not exist`() =
         runTest {
-            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
                 shortLinkStore.update(
                     ShortCode("Something"),
                     url = UrlFactory.random(),
+                    group = ShortLinkGroup.DEFAULT,
                     updater = ShortLinkUser.ANONYMOUS
                 )
             }
         }
+
+    @Test
+    fun `Updating an entry should differentiate by group`() = runTest {
+        with(TestClock()) {
+            val group1 = ShortLinkGroup("group1")
+            val group2 = ShortLinkGroup("group2")
+            val code = ShortCode("code")
+
+            createDirect(ShortLinkFactory.build(code = code, group = group1))
+
+            val newUrl = UrlFactory.random()
+            val newExpiresAt = 6.minutes.fromNow().toEpochMilli()
+
+            shortLinkStore.update(
+                code,
+                url = newUrl,
+                group = group1,
+                updater = ShortLinkUser.ANONYMOUS
+            )
+            getDirect(code, group1)!!.let { assertThat(it.url).isEqualTo(newUrl) }
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
+                shortLinkStore.update(
+                    code,
+                    url = newUrl,
+                    group = group2,
+                    updater = ShortLinkUser.ANONYMOUS
+                )
+            }
+
+            shortLinkStore.update(
+                code,
+                expiresAt = newExpiresAt,
+                group = group1,
+                updater = ShortLinkUser.ANONYMOUS
+            )
+            getDirect(code, group1)!!.let { assertThat(it.expiresAt).isEqualTo(newExpiresAt) }
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
+                shortLinkStore.update(
+                    code,
+                    expiresAt = newExpiresAt,
+                    group = group2,
+                    updater = ShortLinkUser.ANONYMOUS
+                )
+            }
+        }
+    }
 
     @Test
     fun `An exception should be thrown when trying to update a shortlink if the owner does not match`() =
@@ -177,17 +273,19 @@ interface ShortLinkStoreTest {
             val owner = ShortLinkUser("Someone")
             createDirect(ShortLinkFactory.build(owner = owner))
 
-            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
                 shortLinkStore.update(
                     ShortCode("Something"),
                     url = UrlFactory.random(),
+                    group = ShortLinkGroup.DEFAULT,
                     updater = ShortLinkUser.ANONYMOUS
                 )
             }
-            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
                 shortLinkStore.update(
                     ShortCode("Something"),
                     url = UrlFactory.random(),
+                    group = ShortLinkGroup.DEFAULT,
                     updater = ShortLinkUser("Someone Else"),
                 )
             }
@@ -198,16 +296,24 @@ interface ShortLinkStoreTest {
         val shortLink = createDirect()
         val code = shortLink.code
 
-        shortLinkStore.delete(code, deleter = ShortLinkUser.ANONYMOUS)
+        shortLinkStore.delete(
+            code,
+            group = ShortLinkGroup.DEFAULT,
+            deleter = ShortLinkUser.ANONYMOUS
+        )
 
-        getDirect(shortLink.code).let { assertThat(it).isNull() }
+        getDirect(shortLink.code, shortLink.group).let { assertThat(it).isNull() }
     }
 
     @Test
     fun `An exception should be thrown when trying to delete a shortlink if the code does not exist`() =
         runTest {
-            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
-                shortLinkStore.delete(ShortCode("Missing"), deleter = ShortLinkUser.ANONYMOUS)
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
+                shortLinkStore.delete(
+                    ShortCode("Missing"),
+                    group = ShortLinkGroup.DEFAULT,
+                    deleter = ShortLinkUser.ANONYMOUS
+                )
             }
         }
 
@@ -217,13 +323,37 @@ interface ShortLinkStoreTest {
             val owner = ShortLinkUser("Someone")
             createDirect(ShortLinkFactory.build(owner = owner))
 
-            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
-                shortLinkStore.delete(ShortCode("Missing"), deleter = ShortLinkUser.ANONYMOUS)
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
+                shortLinkStore.delete(
+                    ShortCode("Missing"),
+                    group = ShortLinkGroup.DEFAULT,
+                    deleter = ShortLinkUser.ANONYMOUS
+                )
             }
-            assertExceptionThrown(ShortLinkStore.NotFoundOrNotPermittedException::class) {
-                shortLinkStore.delete(ShortCode("Missing"), deleter = ShortLinkUser("Someone Else"))
+            assertExceptionThrown(NotFoundOrNotPermittedException::class) {
+                shortLinkStore.delete(
+                    ShortCode("Missing"),
+                    group = ShortLinkGroup.DEFAULT,
+                    deleter = ShortLinkUser("Someone Else")
+                )
             }
         }
+
+    @Test
+    fun `Deletion should differentiate by group`() = runTest {
+        val group1 = ShortLinkGroup("group1")
+        val group2 = ShortLinkGroup("group2")
+        val code = ShortCode("code")
+        val shortLink = createDirect(ShortLinkFactory.build(code = code, group = group1))
+
+        shortLinkStore.delete(code, group = group1, deleter = ShortLinkUser.ANONYMOUS)
+
+        getDirect(shortLink.code, group1).let { assertThat(it).isNull() }
+
+        assertExceptionThrown(NotFoundOrNotPermittedException::class) {
+            shortLinkStore.delete(code, group = group2, deleter = ShortLinkUser.ANONYMOUS)
+        }
+    }
 
     private suspend fun assertExceptionThrown(type: KClass<*>, block: suspend () -> Unit) {
         var exception: Exception? = null

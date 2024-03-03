@@ -19,7 +19,8 @@ Request:
 
 ```json
 {
-  "owner": "user"
+  "owner": "user",
+  "group": "group1"
 }
 ```
 
@@ -30,44 +31,36 @@ Response:
 {
   "entries": [
     {
-      "creator": {
-        "identifier": "user"
-      },
-      "owner": {
-        "identifier": "user"
-      },
-      "url": "https://example.com/new",
-      "code": {
-        "value": "cgv0"
-      },
-      "createdAt": 1707596795212,
-      "expiresAt": 2707010574211
-    },
-    {
-      "creator": {
-        "identifier": "user"
-      },
-      "owner": {
-        "identifier": "user"
-      },
       "url": "https://example.com",
       "code": {
-        "value": "B65Z"
+        "value": "xJNV"
       },
-      "createdAt": 1707608422227
-    },
-    {
+      "group": {
+        "name": "group1"
+      },
       "creator": {
         "identifier": "user"
       },
       "owner": {
         "identifier": "user"
       },
+      "createdAt": 1709435880288
+    },
+    {
       "url": "https://example.com",
       "code": {
-        "value": "g_z8"
+        "value": "0Clz"
       },
-      "createdAt": 1709408639348
+      "group": {
+        "name": "group1"
+      },
+      "creator": {
+        "identifier": "user"
+      },
+      "owner": {
+        "identifier": "user"
+      },
+      "createdAt": 1709435880973
     }
   ]
 }
@@ -80,7 +73,8 @@ Request:
 ```json
 {
   "url": "https://example.com",
-  "username": "user"
+  "username": "user",
+  "group": "group1"
 }
 ```
 
@@ -88,17 +82,20 @@ Response:
 
 ```json
 {
-  "owner": {
-    "identifier": "user"
-  },
-  "code": {
-    "value": "JdP0"
-  },
   "url": "https://example.com",
+  "code": {
+    "value": "0Clz"
+  },
+  "group": {
+    "name": "group1"
+  },
   "creator": {
     "identifier": "user"
   },
-  "createdAt": 1707072661478
+  "owner": {
+    "identifier": "user"
+  },
+  "createdAt": 1709435880973
 }
 ```
 
@@ -108,7 +105,8 @@ Request:
 
 ```json
 {
-  "code": "JdP0"
+  "code": "0Clz",
+  "group": "group1"
 }
 ```
 
@@ -116,17 +114,20 @@ Response:
 
 ```json
 {
+  "url": "https://example.com/new",
+  "code": {
+    "value": "0Clz"
+  },
+  "group": {
+    "name": "group1"
+  },
   "creator": {
     "identifier": "user"
   },
   "owner": {
     "identifier": "user"
   },
-  "url": "https://example.com",
-  "code": {
-    "value": "JdP0"
-  },
-  "createdAt": 1707072661478
+  "createdAt": 1709435880973
 }
 ```
 
@@ -136,8 +137,9 @@ Request:
 
 ```json
 {
-  "code": "JdP0",
-  "url": "https://example.com/new"
+  "code": "0Clz",
+  "url": "https://example.com/new",
+  "group": "group1"
 }
 ```
 
@@ -145,17 +147,20 @@ Response:
 
 ```json
 {
-  "creator": {
-    "identifier": "user"
-  },
-  "owner": {
-    "identifier": "user"
-  },
   "url": "https://example.com/new",
   "code": {
-    "value": "JdP0"
+    "value": "0Clz"
   },
-  "createdAt": 1707072661478
+  "group": {
+    "name": "group1"
+  },
+  "creator": {
+    "identifier": "prashant"
+  },
+  "owner": {
+    "identifier": "prashant"
+  },
+  "createdAt": 1709435880973
 }
 ```
 
@@ -165,8 +170,9 @@ Request:
 
 ```json
 {
-  "code": "JdP0",
-  "expiresAt": 2707072661478
+  "code": "OClz",
+  "expiresAt": 2707072661478,
+  "group": "group1"
 }
 ```
 
@@ -174,17 +180,21 @@ Response:
 
 ```json
 {
+  "url": "https://example.com/new",
+  "code": {
+    "value": "0Clz"
+  },
+  "group": {
+    "name": "group1"
+  },
   "creator": {
-    "identifier": "user"
+    "identifier": "prashant"
   },
   "owner": {
-    "identifier": "user"
+    "identifier": "prashant"
   },
-  "url": "https://example.com/",
-  "code": {
-    "value": "JdP0"
-  },
-  "createdAt": 2707072661478
+  "createdAt": 1709435880973,
+  "expiresAt": 2707010574211
 }
 ```
 
@@ -194,7 +204,8 @@ Request:
 
 ```json
 {
-  "code": "JdP0"
+  "code": "OClz",
+  "group": "group1"
 }
 ```
 

@@ -10,4 +10,4 @@ fi
 
 curl --request PUT 'localhost:8080/api/update/expiry' \
 -H 'Content-Type: application/json' \
--d "{\"username\":\"prashant\", \"code\": \"$1\", \"expiresAt\":$value}"
+-d "{\"username\":\"prashant\", \"code\": \"$1\", \"expiresAt\":$value, \"group\":\"$3\"}"

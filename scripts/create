@@ -2,4 +2,4 @@
 
 curl --request POST 'localhost:8080/api/create' \
 -H 'Content-Type: application/json' \
--d '{"username": "prashant", "url":"https://example.com"}'
+-d '{"creator": "prashant", "group": "group1", "url":"https://example.com"}'

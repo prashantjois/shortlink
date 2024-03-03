@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkStore.PaginatedResult
 import com.zaxxer.hikari.HikariConfig
@@ -41,31 +42,34 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     private val dataSource = HikariDataSource(config)
 
     override suspend fun listByOwner(
+        group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,
         limit: Int?,
     ): PaginatedResult<ShortLink> {
         val sql =
-            "SELECT * FROM $TABLE_NAME WHERE ${DbFields.OWNER.name} = ? ORDER BY ${DbFields.ID.name} LIMIT ? OFFSET ?"
+            "SELECT * FROM $TABLE_NAME WHERE ${DbFields.GROUP.fieldName} = ? AND ${DbFields.OWNER.fieldName} = ? ORDER BY ${DbFields.ID.fieldName} LIMIT ? OFFSET ?"
         val limitOrDefault = limit ?: PAGE_SIZE
         val offset = paginationKey?.toLong() ?: 0L
         val results =
             read(sql) {
-                setString(1, owner.identifier)
-                setInt(2, limitOrDefault)
-                setLong(3, offset)
+                setString(1, group.name)
+                setString(2, owner.identifier)
+                setInt(3, limitOrDefault)
+                setLong(4, offset)
             }
 
         val entries = mutableListOf<ShortLink>()
         while (results.next()) {
             entries.add(
                 ShortLink(
-                    code = ShortCode(results.getString(DbFields.CODE.name)),
-                    url = URL(results.getString(DbFields.URL.name)),
-                    createdAt = results.getLong(DbFields.CREATED_AT.name),
-                    expiresAt = results.getLongOrNull(DbFields.EXPIRES_AT.name),
-                    creator = ShortLinkUser(results.getString(DbFields.CREATOR.name)!!),
-                    owner = ShortLinkUser(results.getString(DbFields.OWNER.name)!!)
+                    code = ShortCode(results.getString(DbFields.CODE.fieldName)),
+                    url = URL(results.getString(DbFields.URL.fieldName)),
+                    createdAt = results.getLong(DbFields.CREATED_AT.fieldName),
+                    expiresAt = results.getLongOrNull(DbFields.EXPIRES_AT.fieldName),
+                    creator = ShortLinkUser(results.getString(DbFields.CREATOR.fieldName)!!),
+                    owner = ShortLinkUser(results.getString(DbFields.OWNER.fieldName)!!),
+                    group = ShortLinkGroup(results.getString(DbFields.GROUP.fieldName)!!),
                 )
             )
         }
@@ -80,16 +84,26 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     }
 
     override suspend fun create(shortLink: ShortLink): ShortLink {
+        val fieldNames =
+            listOf(
+                    DbFields.GROUP,
+                    DbFields.CODE,
+                    DbFields.URL,
+                    DbFields.CREATED_AT,
+                    DbFields.EXPIRES_AT,
+                    DbFields.CREATOR,
+                    DbFields.OWNER,
+                )
+                .joinToString(", ") { it.fieldName }
         try {
-            write(
-                "INSERT INTO $TABLE_NAME (${DbFields.CODE.name}, ${DbFields.URL.name}, ${DbFields.CREATED_AT.name}, ${DbFields.EXPIRES_AT.name}, ${DbFields.CREATOR.name}, ${DbFields.OWNER.name}) VALUES (?, ?, ?, ?, ?, ?)"
-            ) {
-                setString(1, shortLink.code.value)
-                setString(2, shortLink.url.toString())
-                setLong(3, shortLink.createdAt)
-                setLongOrNull(4, shortLink.expiresAt)
-                setStringOrNull(5, shortLink.creator.identifier)
-                setStringOrNull(6, shortLink.owner.identifier)
+            write("INSERT INTO $TABLE_NAME ($fieldNames) VALUES (?, ?, ?, ?, ?, ?, ?)") {
+                setString(1, shortLink.group.name)
+                setString(2, shortLink.code.value)
+                setString(3, shortLink.url.toString())
+                setLong(4, shortLink.createdAt)
+                setLongOrNull(5, shortLink.expiresAt)
+                setStringOrNull(6, shortLink.creator.identifier)
+                setStringOrNull(7, shortLink.owner.identifier)
             }
         } catch (e: Exception) {
             val message = e.message ?: throw e
@@ -98,7 +112,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
                 message.contains("Duplicate entry") || // mysql
                     message.contains("duplicate key value violates unique constraint") // postgres
             if (isDuplicate) {
-                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code)
+                throw ShortLinkStore.DuplicateShortCodeException(shortLink.group, shortLink.code)
             }
 
             throw e
@@ -107,82 +121,102 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     }
 
     context(Clock)
-    override suspend fun get(code: ShortCode, excludeExpired: Boolean): ShortLink? {
+    override suspend fun get(
+        code: ShortCode,
+        group: ShortLinkGroup,
+        excludeExpired: Boolean
+    ): ShortLink? {
         val sql =
             when (excludeExpired) {
-                false -> "SELECT * FROM $TABLE_NAME WHERE ${DbFields.CODE.name} = ?"
+                false ->
+                    "SELECT * FROM $TABLE_NAME WHERE ${DbFields.GROUP.fieldName} = ? AND ${DbFields.CODE.fieldName} = ?"
                 else ->
-                    "SELECT * FROM $TABLE_NAME WHERE ${DbFields.CODE.name} = ? and (${DbFields.EXPIRES_AT.name} is NULL or ${DbFields.EXPIRES_AT.name} >= ?)"
+                    "SELECT * FROM $TABLE_NAME WHERE ${DbFields.GROUP.fieldName} = ? AND ${DbFields.CODE.fieldName} = ? AND (${DbFields.EXPIRES_AT.fieldName} is NULL or ${DbFields.EXPIRES_AT.fieldName} >= ?)"
             }
 
         val results =
             read(sql) {
-                setString(1, code.value)
+                setString(1, group.name)
+                setString(2, code.value)
                 if (excludeExpired) {
-                    setLong(2, millis())
+                    setLong(3, millis())
                 }
             }
 
         if (results.next()) {
             return ShortLink(
-                code = ShortCode(results.getString(DbFields.CODE.name)),
-                url = URL(results.getString(DbFields.URL.name)),
-                createdAt = results.getLong(DbFields.CREATED_AT.name),
-                expiresAt = results.getLongOrNull(DbFields.EXPIRES_AT.name),
-                creator = ShortLinkUser(results.getString(DbFields.CREATOR.name)!!),
-                owner = ShortLinkUser(results.getString(DbFields.OWNER.name)!!)
+                code = ShortCode(results.getString(DbFields.CODE.fieldName)),
+                url = URL(results.getString(DbFields.URL.fieldName)),
+                createdAt = results.getLong(DbFields.CREATED_AT.fieldName),
+                expiresAt = results.getLongOrNull(DbFields.EXPIRES_AT.fieldName),
+                creator = ShortLinkUser(results.getString(DbFields.CREATOR.fieldName)!!),
+                owner = ShortLinkUser(results.getString(DbFields.OWNER.fieldName)!!),
+                group = ShortLinkGroup(results.getString(DbFields.GROUP.fieldName)!!),
             )
         }
 
         return null
     }
 
-    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) {
+    override suspend fun update(
+        code: ShortCode,
+        url: URL,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ) {
         val sql =
-            "UPDATE $TABLE_NAME SET ${DbFields.URL.name} = ? WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} = ? OR ${DbFields.OWNER.name} = ?)"
+            "UPDATE $TABLE_NAME SET ${DbFields.URL.fieldName} = ? WHERE ${DbFields.GROUP.fieldName} = ? AND ${DbFields.CODE.fieldName} = ? AND (${DbFields.OWNER.fieldName} = ? OR ${DbFields.OWNER.fieldName} = ?)"
 
         val numUpdated =
             write(sql) {
                 setString(1, url.toString())
-                setString(2, code.value)
-                setString(3, ShortLinkUser.ANONYMOUS.identifier)
-                setString(4, updater.identifier)
+                setString(2, group.name)
+                setString(3, code.value)
+                setString(4, ShortLinkUser.ANONYMOUS.identifier)
+                setString(5, updater.identifier)
             }
 
         if (numUpdated == 0) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
     }
 
-    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) {
+    override suspend fun update(
+        code: ShortCode,
+        expiresAt: Long?,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ) {
         val sql =
-            "UPDATE $TABLE_NAME SET ${DbFields.EXPIRES_AT.name} = ? WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} = ? OR ${DbFields.OWNER.name} = ?)"
+            "UPDATE $TABLE_NAME SET ${DbFields.EXPIRES_AT.fieldName} = ? WHERE ${DbFields.GROUP.fieldName} = ? AND ${DbFields.CODE.fieldName} = ? AND (${DbFields.OWNER.fieldName} = ? OR ${DbFields.OWNER.fieldName} = ?)"
 
         val numUpdated =
             write(sql) {
                 setLongOrNull(1, expiresAt)
-                setString(2, code.value)
-                setString(3, ShortLinkUser.ANONYMOUS.identifier)
-                setString(4, updater.identifier)
+                setString(2, group.name)
+                setString(3, code.value)
+                setString(4, ShortLinkUser.ANONYMOUS.identifier)
+                setString(5, updater.identifier)
             }
 
         if (numUpdated == 0) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
     }
 
-    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
+    override suspend fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser) {
         val sql =
-            "DELETE FROM $TABLE_NAME WHERE ${DbFields.CODE.name} = ? AND (${DbFields.OWNER.name} = ? OR ${DbFields.OWNER.name} = ?)"
+            "DELETE FROM $TABLE_NAME WHERE ${DbFields.GROUP.fieldName} = ? AND ${DbFields.CODE.fieldName} = ? AND (${DbFields.OWNER.fieldName} = ? OR ${DbFields.OWNER.fieldName} = ?)"
         val numDeleted =
             write(sql) {
-                setString(1, code.value)
-                setString(2, ShortLinkUser.ANONYMOUS.identifier)
-                setString(3, deleter.identifier)
+                setString(1, group.name)
+                setString(2, code.value)
+                setString(3, ShortLinkUser.ANONYMOUS.identifier)
+                setString(4, deleter.identifier)
             }
 
         if (numDeleted == 0) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
     }
 

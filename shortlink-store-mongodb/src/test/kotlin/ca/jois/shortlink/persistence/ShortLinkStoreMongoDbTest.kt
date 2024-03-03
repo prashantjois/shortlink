@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.persistence.ShortLinkMongoDbExtensions.toDocument
 import ca.jois.shortlink.persistence.ShortLinkMongoDbExtensions.toShortLink
 import com.mongodb.client.MongoClients
@@ -28,11 +29,11 @@ class ShortLinkStoreMongoDbTest : ShortLinkStoreTest {
                 databaseName = DATABASE_NAME
             )
 
-    override suspend fun getDirect(code: ShortCode): ShortLink? {
+    override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink? {
         return collection()
             .find(Document(MongoDbFields.CODE.fieldName, code.value))
-            .firstOrNull()
-            ?.toShortLink()
+            .map { it.toShortLink() }
+            .firstOrNull { it.group == group }
     }
 
     override suspend fun createDirect(shortLink: ShortLink): ShortLink {

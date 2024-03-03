@@ -2,6 +2,7 @@ package ca.jois.shortlink.manager
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkStore.PaginatedResult
 import java.net.URL
@@ -23,6 +24,7 @@ interface ShortLinkManager {
      *   returned in the previous call to retrieve the next page.
      */
     fun listByOwner(
+        group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String? = null,
     ): PaginatedResult<ShortLink>
@@ -39,7 +41,8 @@ interface ShortLinkManager {
     fun create(
         url: URL,
         expiresAt: Long? = null,
-        creator: ShortLinkUser = ShortLinkUser.ANONYMOUS
+        creator: ShortLinkUser = ShortLinkUser.ANONYMOUS,
+        group: ShortLinkGroup = ShortLinkGroup.DEFAULT,
     ): ShortLink
 
     /**
@@ -49,7 +52,7 @@ interface ShortLinkManager {
      * @return The [ShortLink] associated with the provided [ShortCode], or null if the short code
      *   does not exist or is expired.
      */
-    fun get(code: ShortCode): ShortLink?
+    fun get(code: ShortCode, group: ShortLinkGroup): ShortLink?
 
     /**
      * Updates the URL associated with the provided [ShortCode].
@@ -60,7 +63,7 @@ interface ShortLinkManager {
      * @param url The new URL the code should point to
      * @return The updated [ShortLink] object.
      */
-    fun update(code: ShortCode, url: URL, updater: ShortLinkUser): ShortLink
+    fun update(code: ShortCode, url: URL, group: ShortLinkGroup, updater: ShortLinkUser): ShortLink
 
     /**
      * Updates the expiry associated with the provided [ShortCode].
@@ -72,7 +75,12 @@ interface ShortLinkManager {
      *   If null, updates the code to not expire.
      * @return The updated [ShortLink] object.
      */
-    fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser): ShortLink
+    fun update(
+        code: ShortCode,
+        expiresAt: Long?,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ): ShortLink
 
     /**
      * Deletes a short link using its unique [ShortCode].
@@ -81,5 +89,5 @@ interface ShortLinkManager {
      *   determine whether the user has permission to delete the short link.
      * @param code The [ShortCode] representing the short link to be deleted.
      */
-    fun delete(code: ShortCode, deleter: ShortLinkUser)
+    fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser)
 }

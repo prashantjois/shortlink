@@ -7,8 +7,11 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecon
 
 @DynamoDbBean
 data class DyShortLinkItem(
-    @get:DynamoDbPartitionKey var code: String? = null,
-    @get:DynamoDbSecondaryPartitionKey(indexNames = [Indexes.GSI.OWNER_INDEX])
+    @get:DynamoDbPartitionKey var partition_key: String? = null,
+    @get:DynamoDbSecondaryPartitionKey(indexNames = [Indexes.GSI.GROUP_OWNER_INDEX])
+    var group_owner: String? = null,
+    var code: String? = null,
+    var group: String? = null,
     var owner: String? = null,
     var creator: String? = null,
     var expires_at: Long? = null,
@@ -23,7 +26,7 @@ data class DyShortLinkItem(
 
     object Indexes {
         object GSI {
-            const val OWNER_INDEX = "ownerIndex"
+            const val GROUP_OWNER_INDEX = "groupOwnerIndex"
         }
     }
 }

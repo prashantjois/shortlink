@@ -2,4 +2,4 @@
 
 curl --request DELETE 'localhost:8080/api/delete' \
 -H 'Content-Type: application/json' \
--d "{\"username\":\"prashant\", \"code\":\"$1\"}"
+-d "{\"username\":\"prashant\", \"code\":\"$1\", \"group\":\"$2\"}"

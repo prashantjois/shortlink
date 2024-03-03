@@ -2,6 +2,8 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
+import ca.jois.shortlink.persistence.DynamoDbExtensions.partitionKeyString
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toDyShortLinkItem
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toKey
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toShortLink
@@ -38,7 +40,8 @@ class ShortLinkStoreDynamoDbTest : ShortLinkStoreTest {
     override val shortLinkStore: ShortLinkStore
         get() = ShortLinkStoreDynamoDb(dynamoDbClient())
 
-    override suspend fun getDirect(code: ShortCode) = table().getItem(code.toKey())?.toShortLink()
+    override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup) =
+        table().getItem(partitionKeyString(code, group).toKey())?.toShortLink()
 
     override suspend fun createDirect(shortLink: ShortLink): ShortLink {
         table().putItem(shortLink.toDyShortLinkItem())
@@ -63,7 +66,7 @@ class ShortLinkStoreDynamoDbTest : ShortLinkStoreTest {
             it.provisionedThroughput { it.readCapacityUnits(5L).writeCapacityUnits(5L) }
             it.globalSecondaryIndices(
                 EnhancedGlobalSecondaryIndex.builder()
-                    .indexName(DyShortLinkItem.Indexes.GSI.OWNER_INDEX)
+                    .indexName(DyShortLinkItem.Indexes.GSI.GROUP_OWNER_INDEX)
                     .projection { it.projectionType(ProjectionType.ALL) }
                     .provisionedThroughput { it.readCapacityUnits(5L).writeCapacityUnits(5L) }
                     .build()

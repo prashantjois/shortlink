@@ -49,7 +49,7 @@ import shortlinkapp.util.json.adapter.UrlAdapter
  *  ```
  */
 class TestWebServer(clock: Clock) : ServerExtension() {
-    val shortLinkStore : ShortLinkStoreFake = ShortLinkStoreFake()
+    val shortLinkStore: ShortLinkStoreFake = ShortLinkStoreFake()
     val shortLinkManager: ShortLinkManager
     val shortCodeGenerator: ShortCodeGenerator
     val createShortLinkAction: CreateShortLinkAction
@@ -155,8 +155,7 @@ class TestWebServer(clock: Clock) : ServerExtension() {
 
     class ShortLinkStoreFake : ShortLinkStoreInMemory() {
         fun clear() {
-            shortLinksByCode.clear()
+            shortLinksByGroupAndCode.clear()
         }
     }
-
 }

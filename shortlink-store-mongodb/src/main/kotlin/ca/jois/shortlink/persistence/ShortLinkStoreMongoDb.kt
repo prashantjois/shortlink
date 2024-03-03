@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkMongoDbExtensions.toDocument
 import ca.jois.shortlink.persistence.ShortLinkMongoDbExtensions.toShortLink
@@ -34,21 +35,33 @@ class ShortLinkStoreMongoDb(
 
     init {
         shortLinksCollection.createIndex(
-            Document(MongoDbFields.CODE.fieldName, 1),
+            Document(
+                mapOf(
+                    MongoDbFields.GROUP.fieldName to 1,
+                    MongoDbFields.CODE.fieldName to 1,
+                ),
+            ),
             IndexOptions().unique(true)
         )
     }
 
     override suspend fun listByOwner(
+        group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,
         limit: Int?,
     ): ShortLinkStore.PaginatedResult<ShortLink> {
         val limitOrDefault = limit ?: PAGE_SIZE
         val ownerFilter = eq(MongoDbFields.OWNER.fieldName, owner.identifier)
+        val groupFilter = eq(MongoDbFields.GROUP.fieldName, group.name)
         val filter =
-            paginationKey?.let { and(ownerFilter, gt(MongoDbFields.ID.fieldName, ObjectId(it))) }
-                ?: ownerFilter
+            paginationKey?.let {
+                and(
+                    ownerFilter,
+                    groupFilter,
+                    gt(MongoDbFields.ID.fieldName, ObjectId(it)),
+                )
+            } ?: and(ownerFilter, groupFilter)
 
         val results = shortLinksCollection.find(filter).limit(limitOrDefault)
         val shortLinks = results.map { it.toShortLink() }.toList()
@@ -67,7 +80,7 @@ class ShortLinkStoreMongoDb(
             shortLinksCollection.insertOne(shortLink.toDocument())
         } catch (e: MongoWriteException) {
             if (e.message?.contains("duplicate key error") == true) {
-                throw ShortLinkStore.DuplicateShortCodeException(shortLink.code)
+                throw ShortLinkStore.DuplicateShortCodeException(shortLink.group, shortLink.code)
             }
             throw e
         }
@@ -76,12 +89,16 @@ class ShortLinkStoreMongoDb(
     }
 
     context(Clock)
-    override suspend fun get(code: ShortCode, excludeExpired: Boolean): ShortLink? {
+    override suspend fun get(
+        code: ShortCode,
+        group: ShortLinkGroup,
+        excludeExpired: Boolean
+    ): ShortLink? {
         val shortLink =
             shortLinksCollection
                 .find(Document(MongoDbFields.CODE.fieldName, code.value))
-                .firstOrNull()
-                ?.toShortLink() ?: return null
+                .map { it.toShortLink() }
+                .firstOrNull { it.group == group } ?: return null
 
         if (!excludeExpired || shortLink.doesNotExpire()) return shortLink
 
@@ -91,41 +108,56 @@ class ShortLinkStoreMongoDb(
         }
     }
 
-    override suspend fun update(code: ShortCode, url: URL, updater: ShortLinkUser) {
+    override suspend fun update(
+        code: ShortCode,
+        url: URL,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ) {
         val updateResult =
             shortLinksCollection.updateOne(
-                modifyFilterWithOwner(code, updater),
+                modifyFilterWithOwner(code, group, updater),
                 Document("\$set", Document(MongoDbFields.URL.fieldName, url.toString()))
             )
         if (updateResult.matchedCount == 0L) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
     }
 
-    override suspend fun update(code: ShortCode, expiresAt: Long?, updater: ShortLinkUser) {
+    override suspend fun update(
+        code: ShortCode,
+        expiresAt: Long?,
+        group: ShortLinkGroup,
+        updater: ShortLinkUser
+    ) {
         val updateResult =
             shortLinksCollection.updateOne(
-                modifyFilterWithOwner(code, updater),
+                modifyFilterWithOwner(code, group, updater),
                 Document("\$set", Document(MongoDbFields.EXPIRES_AT.fieldName, expiresAt))
             )
         if (updateResult.matchedCount == 0L) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
     }
 
-    override suspend fun delete(code: ShortCode, deleter: ShortLinkUser) {
+    override suspend fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser) {
         val deleteResult =
             shortLinksCollection.deleteOne(
-                modifyFilterWithOwner(code, deleter),
+                modifyFilterWithOwner(code, group, deleter),
             )
         if (deleteResult.deletedCount == 0L) {
-            throw ShortLinkStore.NotFoundOrNotPermittedException(code)
+            throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
         }
     }
 
-    private fun modifyFilterWithOwner(code: ShortCode, user: ShortLinkUser): Bson {
+    private fun modifyFilterWithOwner(
+        code: ShortCode,
+        group: ShortLinkGroup,
+        user: ShortLinkUser
+    ): Bson {
         return and(
             eq(MongoDbFields.CODE.fieldName, code.value),
+            eq(MongoDbFields.GROUP.fieldName, group.name),
             or(
                 eq(MongoDbFields.OWNER.fieldName, ShortLinkUser.ANONYMOUS.identifier),
                 eq(MongoDbFields.OWNER.fieldName, user.identifier)

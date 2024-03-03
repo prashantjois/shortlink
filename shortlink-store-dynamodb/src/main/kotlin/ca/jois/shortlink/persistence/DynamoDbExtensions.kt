@@ -2,6 +2,7 @@ package ca.jois.shortlink.persistence
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
+import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import java.net.URL
 import software.amazon.awssdk.enhanced.dynamodb.Key
@@ -15,7 +16,10 @@ object DynamoDbExtensions {
 
     fun ShortLink.toDyShortLinkItem(version: Long? = null) =
         DyShortLinkItem(
+            partition_key = partitionKeyString,
+            group_owner = groupOwnerString,
             code = code.value,
+            group = group.name,
             created_at = createdAt,
             expires_at = expiresAt ?: Long.MAX_VALUE,
             url = url.toString(),
@@ -38,6 +42,25 @@ object DynamoDbExtensions {
             expiresAt = expiresAt,
             creator = ShortLinkUser(creator!!),
             owner = ShortLinkUser(owner!!),
+            group = ShortLinkGroup(group!!),
         )
     }
+
+    fun partitionKeyString(code: ShortCode, group: ShortLinkGroup): String {
+        return listOf(group.name, code.value).joinToString(DyShortLinkItem.DELIMITER)
+    }
+
+    fun groupOwnerString(owner: ShortLinkUser, group: ShortLinkGroup): String {
+        return listOf(group.name, owner.identifier).joinToString(DyShortLinkItem.DELIMITER)
+    }
+
+    val ShortLink.partitionKeyString: String
+        get() {
+            return partitionKeyString(code, group)
+        }
+
+    val ShortLink.groupOwnerString: String
+        get() {
+            return groupOwnerString(owner, group)
+        }
 }
