@@ -38,43 +38,43 @@ object ShortLinkStorePostgresTest : ShortLinkStoreJdbcTest(TestDatabase.postgres
  * ```
  */
 abstract class ShortLinkStoreJdbcTest(private val container: JdbcDatabaseContainer<*>) :
-    ShortLinkStoreTest {
+  ShortLinkStoreTest {
 
-    override val shortLinkStore: ShortLinkStore
-        get() = shortLinkStoreJdbc
+  override val shortLinkStore: ShortLinkStore
+    get() = shortLinkStoreJdbc
 
-    /**
-     * This property is lazily initialized to ensure the database container is started before
-     * accessing the database connection parameters.
-     */
-    private lateinit var shortLinkStoreJdbc: ShortLinkStoreJdbc
+  /**
+   * This property is lazily initialized to ensure the database container is started before
+   * accessing the database connection parameters.
+   */
+  private lateinit var shortLinkStoreJdbc: ShortLinkStoreJdbc
 
-    /**
-     * Prepares the test environment before each test execution. It starts the [container] and
-     * initializes [shortLinkStoreJdbc] with a HikariCP data source configured for the temporary
-     * database instance.
-     */
-    @BeforeEach
-    fun setup() {
-        container.start()
-        shortLinkStoreJdbc = ShortLinkStoreJdbc(container.hikariConfig())
-    }
+  /**
+   * Prepares the test environment before each test execution. It starts the [container] and
+   * initializes [shortLinkStoreJdbc] with a HikariCP data source configured for the temporary
+   * database instance.
+   */
+  @BeforeEach
+  fun setup() {
+    container.start()
+    shortLinkStoreJdbc = ShortLinkStoreJdbc(container.hikariConfig())
+  }
 
-    /**
-     * Cleans up the test environment after each test execution by stopping the [container],
-     * effectively destroying the temporary database instance and ensuring no state is shared
-     * between tests.
-     */
-    @AfterEach
-    fun teardown() {
-        container.stop()
-    }
+  /**
+   * Cleans up the test environment after each test execution by stopping the [container],
+   * effectively destroying the temporary database instance and ensuring no state is shared
+   * between tests.
+   */
+  @AfterEach
+  fun teardown() {
+    container.stop()
+  }
 
-    override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink? {
-        return container.getShortLinkDirect(code, group)
-    }
+  override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink? {
+    return container.getShortLinkDirect(code, group)
+  }
 
-    override suspend fun createDirect(shortLink: ShortLink): ShortLink {
-        return container.createShortLinkDirect(shortLink)
-    }
+  override suspend fun createDirect(shortLink: ShortLink): ShortLink {
+    return container.createShortLinkDirect(shortLink)
+  }
 }

@@ -9,12 +9,12 @@ import java.lang.reflect.ParameterizedType
 
 /** A utility class that converts a JSON string to its deserialized form for Armeria requests */
 object ArmeriaRequestConverter : RequestConverterFunction {
-    private val moshi: Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+  private val moshi: Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
-    override fun convertRequest(
-        ctx: ServiceRequestContext,
-        request: AggregatedHttpRequest,
-        expectedResultType: Class<*>,
-        expectedParameterizedResultType: ParameterizedType?
-    ) = with(moshi.adapter(expectedResultType)) { fromJson(request.contentUtf8()) }
+  override fun convertRequest(
+    ctx: ServiceRequestContext,
+    request: AggregatedHttpRequest,
+    expectedResultType: Class<*>,
+    expectedParameterizedResultType: ParameterizedType?
+  ) = with(moshi.adapter(expectedResultType)) { fromJson(request.contentUtf8()) }
 }

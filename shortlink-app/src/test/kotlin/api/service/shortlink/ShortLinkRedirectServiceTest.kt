@@ -11,18 +11,20 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 class ShortLinkRedirectServiceTest {
-    @Test
-    fun `redirect returns a 3XX response`() = runTest {
-        val shortLink = ShortLinkFactory.build()
-        server.shortLinkStore.create(shortLink)
-        val client = WebClient.of(server.httpUri())
-        val response =
-            client.get("r/${shortLink.group.name}/${shortLink.code.value}").aggregate().join()
-        assertThat(response.status()).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
-        assertThat(response.headers().get("location")).contains(shortLink.url.toString())
-    }
+  @Test
+  fun `redirect returns a 3XX response`() = runTest {
+    val shortLink = ShortLinkFactory.build()
+    server.shortLinkStore.create(shortLink)
+    val client = WebClient.of(server.httpUri())
+    val response =
+      client.get("r/${shortLink.group.name}/${shortLink.code.value}").aggregate().join()
+    assertThat(response.status()).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+    assertThat(response.headers().get("location")).contains(shortLink.url.toString())
+  }
 
-    companion object {
-        @JvmField @RegisterExtension val server = TestWebServer(TestClock())
-    }
+  companion object {
+    @JvmField
+    @RegisterExtension
+    val server = TestWebServer(TestClock())
+  }
 }

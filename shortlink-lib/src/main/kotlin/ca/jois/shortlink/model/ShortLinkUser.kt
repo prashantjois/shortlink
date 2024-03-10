@@ -8,14 +8,14 @@ package ca.jois.shortlink.model
  * @param identifier The user's unique identifier
  */
 data class ShortLinkUser(
-    val identifier: String,
+  val identifier: String,
 ) {
-    companion object {
-        /**
-         * A special user that represents an anonymous user. This user is used when a short link is
-         * created without an associated user. The value is a UUID to avoid collision with a real
-         * user's identifier as much as possible.
-         */
-        val ANONYMOUS = ShortLinkUser("ANON_a289b3279afd48c1a9419fce2b5bf132")
-    }
+  companion object {
+    /**
+     * A special user that represents an anonymous user. This user is used when a short link is
+     * created without an associated user. The value is a UUID to avoid collision with a real
+     * user's identifier as much as possible.
+     */
+    val ANONYMOUS = ShortLinkUser("ANON_a289b3279afd48c1a9419fce2b5bf132")
+  }
 }

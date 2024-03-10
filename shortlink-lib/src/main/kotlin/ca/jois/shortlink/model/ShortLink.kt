@@ -17,18 +17,18 @@ import java.time.Clock
  *   null, it means the shortlink never expires.
  */
 data class ShortLink(
-    val url: URL,
-    val code: ShortCode,
-    val group: ShortLinkGroup,
-    val creator: ShortLinkUser,
-    val owner: ShortLinkUser,
-    val createdAt: Long,
-    val expiresAt: Long? = null,
+  val url: URL,
+  val code: ShortCode,
+  val group: ShortLinkGroup,
+  val creator: ShortLinkUser,
+  val owner: ShortLinkUser,
+  val createdAt: Long,
+  val expiresAt: Long? = null,
 ) {
-    /** Returns true if the short link never expires. */
-    fun doesNotExpire() = expiresAt == null
+  /** Returns true if the short link never expires. */
+  fun doesNotExpire() = expiresAt == null
 
-    /** Returns true if the short link has expired. */
-    context(Clock)
-    fun isExpired() = expiresAt != null && millis() > expiresAt
+  /** Returns true if the short link has expired. */
+  context(Clock)
+  fun isExpired() = expiresAt != null && millis() > expiresAt
 }

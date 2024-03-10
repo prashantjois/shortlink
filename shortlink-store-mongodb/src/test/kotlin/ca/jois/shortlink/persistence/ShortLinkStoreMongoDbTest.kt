@@ -16,35 +16,36 @@ import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
 class ShortLinkStoreMongoDbTest : ShortLinkStoreTest {
-    @Container private val container = MongoDBContainer(DockerImageName.parse("mongo:5.0.24"))
+  @Container
+  private val container = MongoDBContainer(DockerImageName.parse("mongo:5.0.24"))
 
-    companion object {
-        private const val DATABASE_NAME = "shortlinks"
-    }
+  companion object {
+    private const val DATABASE_NAME = "shortlinks"
+  }
 
-    override val shortLinkStore: ShortLinkStore
-        get() =
-            ShortLinkStoreMongoDb(
-                connectionString = container.getReplicaSetUrl(DATABASE_NAME),
-                databaseName = DATABASE_NAME
-            )
+  override val shortLinkStore: ShortLinkStore
+    get() =
+      ShortLinkStoreMongoDb(
+        connectionString = container.getReplicaSetUrl(DATABASE_NAME),
+        databaseName = DATABASE_NAME,
+      )
 
-    override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink? {
-        return collection()
-            .find(Document(MongoDbFields.CODE.fieldName, code.value))
-            .map { it.toShortLink() }
-            .firstOrNull { it.group == group }
-    }
+  override suspend fun getDirect(code: ShortCode, group: ShortLinkGroup): ShortLink? {
+    return collection()
+      .find(Document(MongoDbFields.CODE.fieldName, code.value))
+      .map { it.toShortLink() }
+      .firstOrNull { it.group == group }
+  }
 
-    override suspend fun createDirect(shortLink: ShortLink): ShortLink {
-        val insertResult = collection().insertOne(shortLink.toDocument())
-        assertThat(insertResult.wasAcknowledged()).isTrue()
-        return shortLink
-    }
+  override suspend fun createDirect(shortLink: ShortLink): ShortLink {
+    val insertResult = collection().insertOne(shortLink.toDocument())
+    assertThat(insertResult.wasAcknowledged()).isTrue()
+    return shortLink
+  }
 
-    private fun collection(): MongoCollection<Document> {
-        val client = MongoClients.create(container.getReplicaSetUrl(DATABASE_NAME))
-        val database = client.getDatabase(DATABASE_NAME)
-        return database.getCollection(DATABASE_NAME)
-    }
+  private fun collection(): MongoCollection<Document> {
+    val client = MongoClients.create(container.getReplicaSetUrl(DATABASE_NAME))
+    val database = client.getDatabase(DATABASE_NAME)
+    return database.getCollection(DATABASE_NAME)
+  }
 }

@@ -102,12 +102,3 @@ manager.delete(ShortLinkUser("username"), shortLink.code)
 
 A simple web server is provided to illustrate how you could build HTTP APIs against
 Run the `main()` function in `App.kt` in the [shortlink-app](shortlink-app/README.md) module.
-
-## Development Environment
-
-Add a pre-commit hook for code style:
-
-```bash
-.hooks/install
-```
-

@@ -8,8 +8,8 @@ package ca.jois.shortlink.model
  * @property name The name of the group.
  */
 data class ShortLinkGroup(val name: String) {
-    companion object {
-        /** The default group for short links. */
-        val DEFAULT = ShortLinkGroup("GROUP_f4811e5d27094b7b8d7520183ee14e73")
-    }
+  companion object {
+    /** The default group for short links. */
+    val DEFAULT = ShortLinkGroup("GROUP_f4811e5d27094b7b8d7520183ee14e73")
+  }
 }

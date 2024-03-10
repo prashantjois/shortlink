@@ -7,31 +7,31 @@ import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.ShortLinkStore
 
 class ListShortLinksAction(private val shortLinkManager: ShortLinkManager) {
-    fun handle(request: Request): Response {
-        return Response.of(
-            shortLinkManager.listByGroupAndOwner(
-                ShortLinkGroup(request.group),
-                request.ownerAsShortLinkUser(),
-                request.paginationKey
-            )
+  fun handle(request: Request): Response {
+    return Response.of(
+      shortLinkManager.listByGroupAndOwner(
+        ShortLinkGroup(request.group),
+        request.ownerAsShortLinkUser(),
+        request.paginationKey,
+      ),
+    )
+  }
+
+  data class Request(
+    val group: String,
+    val owner: String? = null,
+    val paginationKey: String? = null,
+  ) {
+    fun ownerAsShortLinkUser() = owner?.let { ShortLinkUser(it) } ?: ShortLinkUser.ANONYMOUS
+  }
+
+  data class Response(val entries: List<ShortLink>, val paginationKey: String?) {
+    companion object {
+      fun of(paginatedResult: ShortLinkStore.PaginatedResult<ShortLink>) =
+        Response(
+          entries = paginatedResult.entries,
+          paginationKey = paginatedResult.nextPageKey,
         )
     }
-
-    data class Request(
-        val group: String,
-        val owner: String? = null,
-        val paginationKey: String? = null,
-    ) {
-        fun ownerAsShortLinkUser() = owner?.let { ShortLinkUser(it) } ?: ShortLinkUser.ANONYMOUS
-    }
-
-    data class Response(val entries: List<ShortLink>, val paginationKey: String?) {
-        companion object {
-            fun of(paginatedResult: ShortLinkStore.PaginatedResult<ShortLink>) =
-                Response(
-                    entries = paginatedResult.entries,
-                    paginationKey = paginatedResult.nextPageKey
-                )
-        }
-    }
+  }
 }

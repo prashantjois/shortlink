@@ -2,7 +2,7 @@ package ca.jois.shortlink.generator
 
 import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.util.Encoding.toBase64
-import java.util.UUID
+import java.util.*
 
 /**
  * A short code generator that picks a code from a space of codes of a certain size and assumes the
@@ -27,21 +27,21 @@ import java.util.UUID
  * ```
  */
 class NaiveShortCodeGenerator(private val length: Int = DEFAULT_CODE_LENGTH) : ShortCodeGenerator {
-    init {
-        require(length >= MIN_CODE_LENGTH) { "Code length must be >= $MIN_CODE_LENGTH" }
-    }
+  init {
+    require(length >= MIN_CODE_LENGTH) { "Code length must be >= $MIN_CODE_LENGTH" }
+  }
 
-    override fun generate(): ShortCode {
-        val uuid = UUID.randomUUID()
-        val base64Encoded = uuid.toBase64()
-        val shortCode = ShortCode(base64Encoded.take(length))
-        return shortCode
-    }
+  override fun generate(): ShortCode {
+    val uuid = UUID.randomUUID()
+    val base64Encoded = uuid.toBase64()
+    val shortCode = ShortCode(base64Encoded.take(length))
+    return shortCode
+  }
 
-    companion object {
-        private const val DEFAULT_CODE_LENGTH = 4
+  companion object {
+    private const val DEFAULT_CODE_LENGTH = 4
 
-        // Arbitrarily enforce a min length of 2 (4,096 codes) as anything less is not practical
-        private const val MIN_CODE_LENGTH = 2
-    }
+    // Arbitrarily enforce a min length of 2 (4,096 codes) as anything less is not practical
+    private const val MIN_CODE_LENGTH = 2
+  }
 }

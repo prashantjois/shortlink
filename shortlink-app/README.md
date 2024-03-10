@@ -26,7 +26,6 @@ Request:
 
 Response:
 
-
 ```json
 {
   "entries": [
