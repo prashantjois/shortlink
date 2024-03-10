@@ -23,7 +23,7 @@ interface ShortLinkStore {
      *
      * @param owner The owner of the short links to retrieve.
      */
-    suspend fun listByOwner(
+    suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String? = null,

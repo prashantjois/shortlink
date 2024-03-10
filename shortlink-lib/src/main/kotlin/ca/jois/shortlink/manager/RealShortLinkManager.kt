@@ -16,12 +16,12 @@ class RealShortLinkManager(
     private val shortCodeGenerator: ShortCodeGenerator,
     private val shortLinkStore: ShortLinkStore,
 ) : ShortLinkManager {
-    override fun listByOwner(
+    override fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?
     ): PaginatedResult<ShortLink> {
-        return runBlocking { shortLinkStore.listByOwner(group, owner, paginationKey) }
+        return runBlocking { shortLinkStore.listByGroupAndOwner(group, owner, paginationKey) }
     }
 
     override fun create(

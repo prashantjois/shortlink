@@ -16,7 +16,7 @@ open class ShortLinkStoreInMemory : ShortLinkStore {
     protected val shortLinksByGroupAndCode =
         HashMap<ShortLinkGroup, HashMap<ShortCode, ShortLink>>()
 
-    override suspend fun listByOwner(
+    override suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,

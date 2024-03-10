@@ -34,7 +34,7 @@ class RealShortLinkManagerTest {
                 val shortLinks = (1..5).map { ShortLinkFactory.build(owner = user) }
                 shortLinks.forEach { shortLinkStore.create(it) }
 
-                val result = realShortLinkManager.listByOwner(group, user)
+                val result = realShortLinkManager.listByGroupAndOwner(group, user)
 
                 assertThat(result.entries).containsExactlyInAnyOrderElementsOf(shortLinks)
             }

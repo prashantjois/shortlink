@@ -9,7 +9,7 @@ import ca.jois.shortlink.persistence.ShortLinkStore
 class ListShortLinksAction(private val shortLinkManager: ShortLinkManager) {
     fun handle(request: Request): Response {
         return Response.of(
-            shortLinkManager.listByOwner(
+            shortLinkManager.listByGroupAndOwner(
                 ShortLinkGroup(request.group),
                 request.ownerAsShortLinkUser(),
                 request.paginationKey

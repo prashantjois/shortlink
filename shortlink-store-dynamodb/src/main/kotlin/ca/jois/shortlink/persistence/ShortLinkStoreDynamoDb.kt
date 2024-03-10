@@ -46,7 +46,7 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
     private val table =
         client.table(DyShortLinkItem.TABLE_NAME, TableSchema.fromBean(DyShortLinkItem::class.java))
 
-    override suspend fun listByOwner(
+    override suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,

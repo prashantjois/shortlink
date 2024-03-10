@@ -61,7 +61,7 @@ interface ShortLinkStoreTest {
                 createDirect(ShortLinkFactory.build(group = ShortLinkGroup("other"), owner = owner))
             }
 
-        shortLinkStore.listByOwner(group, owner).let {
+        shortLinkStore.listByGroupAndOwner(group, owner).let {
             assertThat(it.entries).containsExactlyInAnyOrder(*shortLinksForOwner.toTypedArray())
             assertThat(it.entries).doesNotContain(*shortLinksByDifferentOwner.toTypedArray())
             assertThat(it.entries).doesNotContain(*shortLinksByDifferentGroup.toTypedArray())
@@ -76,7 +76,7 @@ interface ShortLinkStoreTest {
         val otherShortLinks = (1..5).map { createDirect(ShortLinkFactory.build()) }
 
         val paginationKey =
-            shortLinkStore.listByOwner(group, owner, limit = 3).let {
+            shortLinkStore.listByGroupAndOwner(group, owner, limit = 3).let {
                 assertThat(it.entries).hasSize(3)
                 assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
                 assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
@@ -84,7 +84,7 @@ interface ShortLinkStoreTest {
                 it.paginationKey
             }
 
-        shortLinkStore.listByOwner(group, owner, limit = 3, paginationKey = paginationKey).let {
+        shortLinkStore.listByGroupAndOwner(group, owner, limit = 3, paginationKey = paginationKey).let {
             assertThat(it.entries).hasSize(2)
             assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
             assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())

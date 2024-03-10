@@ -41,7 +41,7 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
 
     private val dataSource = HikariDataSource(config)
 
-    override suspend fun listByOwner(
+    override suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,

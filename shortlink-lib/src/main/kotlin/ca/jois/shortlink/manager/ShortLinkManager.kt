@@ -23,7 +23,7 @@ interface ShortLinkManager {
      *   value is initially null to start at the first page, and subsequent calls will use the value
      *   returned in the previous call to retrieve the next page.
      */
-    fun listByOwner(
+    fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String? = null,

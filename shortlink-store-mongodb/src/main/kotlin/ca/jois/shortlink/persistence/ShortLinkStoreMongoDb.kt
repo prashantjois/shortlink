@@ -45,7 +45,7 @@ class ShortLinkStoreMongoDb(
         )
     }
 
-    override suspend fun listByOwner(
+    override suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,

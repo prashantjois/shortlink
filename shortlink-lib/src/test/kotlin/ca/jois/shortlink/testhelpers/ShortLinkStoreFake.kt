@@ -12,7 +12,7 @@ import java.time.Clock
 class ShortLinkStoreFake : ShortLinkStore {
     private val shortLinks = HashMap<ShortLinkGroup, HashMap<ShortCode, ShortLink>>()
 
-    override suspend fun listByOwner(
+    override suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
         owner: ShortLinkUser,
         paginationKey: String?,
