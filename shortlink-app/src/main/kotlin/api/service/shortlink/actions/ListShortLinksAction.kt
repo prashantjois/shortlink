@@ -30,7 +30,7 @@ class ListShortLinksAction(private val shortLinkManager: ShortLinkManager) {
             fun of(paginatedResult: ShortLinkStore.PaginatedResult<ShortLink>) =
                 Response(
                     entries = paginatedResult.entries,
-                    paginationKey = paginatedResult.paginationKey
+                    paginationKey = paginatedResult.nextPageKey
                 )
         }
     }

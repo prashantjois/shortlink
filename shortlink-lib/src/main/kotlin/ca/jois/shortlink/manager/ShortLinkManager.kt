@@ -22,7 +22,7 @@ interface ShortLinkManager {
    * @param owner The owner of the short links to retrieve.
    * @param paginationKey A key that can be used to retrieve the next page of short links. If this
    *   value is null, the first page of short links will be retrieved. Subsequent pages can be
-   *   retrieved by passing the value returned in the [PaginatedResult.paginationKey] field of
+   *   retrieved by passing the value returned in the [PaginatedResult.nextPageKey] field of
    *   the previous result.
    */
   fun listByGroupAndOwner(
