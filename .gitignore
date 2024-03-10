@@ -35,6 +35,7 @@ build/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/copilot/
 *.iws
 *.iml
 *.ipr
