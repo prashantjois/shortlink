@@ -4,7 +4,7 @@ import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
 import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
-import ca.jois.shortlink.persistence.Database.DbFields
+import ca.jois.shortlink.persistence.Database.TableName
 import ca.jois.shortlink.persistence.ShortLinkStore.PaginatedResult
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -12,6 +12,8 @@ import java.net.URL
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Clock
+import ca.jois.shortlink.persistence.Database.DbFields.ShortLinkGroups as ShortLinkGroupsFields
+import ca.jois.shortlink.persistence.Database.DbFields.ShortLinks as ShortLinksField
 
 /**
  * Implementation of [ShortLinkStore] that uses raw SQL queries through JDBC connections.
@@ -48,12 +50,14 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     limit: Int?,
   ): PaginatedResult<ShortLink> {
     val sql = """
-      SELECT * 
-      FROM ${Database.TableName.SHORTLINKS} 
+      SELECT *
+      FROM ${TableName.SHORTLINKS} s
+      INNER JOIN ${TableName.SHORTLINK_GROUPS} g
+        ON s.${ShortLinksField.GROUP_ID.fieldName} = g.${ShortLinkGroupsFields.ID.fieldName}
       WHERE 1=1
-        AND ${DbFields.ShortLinks.GROUP.fieldName} = ? 
-        AND ${DbFields.ShortLinks.OWNER.fieldName} = ? 
-      ORDER BY ${DbFields.ShortLinks.ID.fieldName} 
+        AND ${ShortLinkGroupsFields.NAME.fieldName} = ?
+        AND ${ShortLinksField.OWNER.fieldName} = ? 
+      ORDER BY s.${ShortLinksField.ID.fieldName} 
       LIMIT ? 
       OFFSET ?
     """.trimIndent()
@@ -72,13 +76,13 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     while (results.next()) {
       entries.add(
         ShortLink(
-          code = ShortCode(results.getString(DbFields.ShortLinks.CODE.fieldName)),
-          url = URL(results.getString(DbFields.ShortLinks.URL.fieldName)),
-          createdAt = results.getLong(DbFields.ShortLinks.CREATED_AT.fieldName),
-          expiresAt = results.getLongOrNull(DbFields.ShortLinks.EXPIRES_AT.fieldName),
-          creator = ShortLinkUser(results.getString(DbFields.ShortLinks.CREATOR.fieldName)!!),
-          owner = ShortLinkUser(results.getString(DbFields.ShortLinks.OWNER.fieldName)!!),
-          group = ShortLinkGroup(results.getString(DbFields.ShortLinks.GROUP.fieldName)!!),
+          code = ShortCode(results.getString(ShortLinksField.CODE.fieldName)),
+          url = URL(results.getString(ShortLinksField.URL.fieldName)),
+          createdAt = results.getLong(ShortLinksField.CREATED_AT.fieldName),
+          expiresAt = results.getLongOrNull(ShortLinksField.EXPIRES_AT.fieldName),
+          creator = ShortLinkUser(results.getString(ShortLinksField.CREATOR.fieldName)!!),
+          owner = ShortLinkUser(results.getString(ShortLinksField.OWNER.fieldName)!!),
+          group = ShortLinkGroup(results.getString(ShortLinkGroupsFields.NAME.fieldName)!!),
         ),
       )
     }
@@ -93,20 +97,27 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
   }
 
   override suspend fun create(shortLink: ShortLink): ShortLink {
-    val fieldNames =
-      listOf(
-        DbFields.ShortLinks.GROUP,
-        DbFields.ShortLinks.CODE,
-        DbFields.ShortLinks.URL,
-        DbFields.ShortLinks.CREATED_AT,
-        DbFields.ShortLinks.EXPIRES_AT,
-        DbFields.ShortLinks.CREATOR,
-        DbFields.ShortLinks.OWNER,
-      ).joinToString(", ") { it.fieldName }
     try {
+      upsertGroup(shortLink.group)
       val sql = """
-        INSERT INTO ${Database.TableName.SHORTLINKS}
-          ($fieldNames) VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ${TableName.SHORTLINKS} (
+            ${ShortLinksField.GROUP_ID.fieldName},
+            ${ShortLinksField.CODE.fieldName},
+            ${ShortLinksField.URL.fieldName},
+            ${ShortLinksField.CREATED_AT.fieldName},
+            ${ShortLinksField.EXPIRES_AT.fieldName},
+            ${ShortLinksField.CREATOR.fieldName},
+            ${ShortLinksField.OWNER.fieldName}
+        )
+        VALUES (
+          (SELECT ID FROM ${TableName.SHORTLINK_GROUPS} WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?),
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
       """.trimIndent()
       write(sql) {
         setString(1, shortLink.group.name)
@@ -132,31 +143,51 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     return shortLink
   }
 
+  private fun upsertGroup(group: ShortLinkGroup) {
+    val selectSql = """
+      SELECT ${ShortLinkGroupsFields.ID.fieldName} 
+      FROM ${TableName.SHORTLINK_GROUPS} 
+      WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?
+    """.trimIndent()
+
+    val selectResults = read(selectSql) {
+      setString(1, group.name)
+    }
+
+    if (selectResults.next()) return
+
+    val insertSql = """
+      INSERT INTO ${TableName.SHORTLINK_GROUPS}
+      (${ShortLinkGroupsFields.NAME.fieldName}) 
+      VALUES
+      (?)
+    """.trimIndent()
+
+    write(insertSql) {
+      setString(1, group.name)
+    }
+  }
+
   context(Clock)
   override suspend fun get(
     code: ShortCode,
     group: ShortLinkGroup,
     excludeExpired: Boolean
   ): ShortLink? {
-    val sql =
-      when (excludeExpired) {
-        false -> """
-          SELECT * 
-          FROM ${Database.TableName.SHORTLINKS} 
-          WHERE 1=1
-            AND ${DbFields.ShortLinks.GROUP.fieldName} = ? 
-            AND ${DbFields.ShortLinks.CODE.fieldName} = ?
-        """.trimIndent()
+    var sql = """
+      SELECT * 
+      FROM ${TableName.SHORTLINKS} s
+      INNER JOIN ${TableName.SHORTLINK_GROUPS} g
+        ON s.${ShortLinksField.GROUP_ID.fieldName} = g.${ShortLinkGroupsFields.ID.fieldName}
+      WHERE 1=1
+        AND ${ShortLinkGroupsFields.NAME.fieldName} = ?
+        AND ${ShortLinksField.CODE.fieldName} = ?
+    """.trimIndent()
 
-        else -> """
-          SELECT * 
-          FROM ${Database.TableName.SHORTLINKS} 
-          WHERE 1=1
-            AND ${DbFields.ShortLinks.GROUP.fieldName} = ? 
-            AND ${DbFields.ShortLinks.CODE.fieldName} = ? 
-            AND (${DbFields.ShortLinks.EXPIRES_AT.fieldName} is NULL or ${DbFields.ShortLinks.EXPIRES_AT.fieldName} >= ?)
-        """.trimIndent()
-      }
+    sql = when (excludeExpired) {
+      true -> "$sql AND (${ShortLinksField.EXPIRES_AT.fieldName} is NULL or ${ShortLinksField.EXPIRES_AT.fieldName} >= ?)"
+      false -> sql
+    }
 
     val results =
       read(sql) {
@@ -169,13 +200,13 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
 
     if (results.next()) {
       return ShortLink(
-        code = ShortCode(results.getString(DbFields.ShortLinks.CODE.fieldName)),
-        url = URL(results.getString(DbFields.ShortLinks.URL.fieldName)),
-        createdAt = results.getLong(DbFields.ShortLinks.CREATED_AT.fieldName),
-        expiresAt = results.getLongOrNull(DbFields.ShortLinks.EXPIRES_AT.fieldName),
-        creator = ShortLinkUser(results.getString(DbFields.ShortLinks.CREATOR.fieldName)!!),
-        owner = ShortLinkUser(results.getString(DbFields.ShortLinks.OWNER.fieldName)!!),
-        group = ShortLinkGroup(results.getString(DbFields.ShortLinks.GROUP.fieldName)!!),
+        code = ShortCode(results.getString(ShortLinksField.CODE.fieldName)),
+        url = URL(results.getString(ShortLinksField.URL.fieldName)),
+        createdAt = results.getLong(ShortLinksField.CREATED_AT.fieldName),
+        expiresAt = results.getLongOrNull(ShortLinksField.EXPIRES_AT.fieldName),
+        creator = ShortLinkUser(results.getString(ShortLinksField.CREATOR.fieldName)!!),
+        owner = ShortLinkUser(results.getString(ShortLinksField.OWNER.fieldName)!!),
+        group = ShortLinkGroup(results.getString(ShortLinkGroupsFields.NAME.fieldName)!!),
       )
     }
 
@@ -189,12 +220,16 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     updater: ShortLinkUser
   ) {
     val sql = """
-      UPDATE ${Database.TableName.SHORTLINKS} 
-      SET ${DbFields.ShortLinks.URL.fieldName} = ? 
+      UPDATE ${TableName.SHORTLINKS} 
+      SET ${ShortLinksField.URL.fieldName} = ? 
       WHERE 1=1
-        AND ${DbFields.ShortLinks.GROUP.fieldName} = ? 
-        AND ${DbFields.ShortLinks.CODE.fieldName} = ? 
-        AND (${DbFields.ShortLinks.OWNER.fieldName} = ? OR ${DbFields.ShortLinks.OWNER.fieldName} = ?)
+        AND ${ShortLinksField.GROUP_ID.fieldName} = (
+          SELECT ${ShortLinkGroupsFields.ID.fieldName} 
+            FROM ${TableName.SHORTLINK_GROUPS} 
+            WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?
+        ) 
+        AND ${ShortLinksField.CODE.fieldName} = ? 
+        AND (${ShortLinksField.OWNER.fieldName} = ? OR ${ShortLinksField.OWNER.fieldName} = ?)
     """.trimIndent()
 
     val numUpdated =
@@ -218,12 +253,16 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
     updater: ShortLinkUser
   ) {
     val sql = """
-      UPDATE ${Database.TableName.SHORTLINKS} 
-      SET ${DbFields.ShortLinks.EXPIRES_AT.fieldName} = ? 
+      UPDATE ${TableName.SHORTLINKS} 
+      SET ${ShortLinksField.EXPIRES_AT.fieldName} = ? 
       WHERE 1=1
-        AND ${DbFields.ShortLinks.GROUP.fieldName} = ?
-        AND ${DbFields.ShortLinks.CODE.fieldName} = ?
-        AND (${DbFields.ShortLinks.OWNER.fieldName} = ? OR ${DbFields.ShortLinks.OWNER.fieldName} = ?)
+        AND ${ShortLinksField.GROUP_ID.fieldName} = (
+          SELECT ${ShortLinkGroupsFields.ID.fieldName} 
+            FROM ${TableName.SHORTLINK_GROUPS} 
+            WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?
+        ) 
+        AND ${ShortLinksField.CODE.fieldName} = ?
+        AND (${ShortLinksField.OWNER.fieldName} = ? OR ${ShortLinksField.OWNER.fieldName} = ?)
     """.trimIndent()
 
     val numUpdated =
@@ -242,11 +281,15 @@ class ShortLinkStoreJdbc(config: HikariConfig) : ShortLinkStore {
 
   override suspend fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser) {
     val sql = """
-      DELETE FROM ${Database.TableName.SHORTLINKS}
+      DELETE FROM ${TableName.SHORTLINKS}
       WHERE 1=1
-        AND ${DbFields.ShortLinks.GROUP.fieldName} = ?
-        AND ${DbFields.ShortLinks.CODE.fieldName} = ?
-        AND (${DbFields.ShortLinks.OWNER.fieldName} = ? OR ${DbFields.ShortLinks.OWNER.fieldName} = ?)
+        AND ${ShortLinksField.GROUP_ID.fieldName} = (
+          SELECT ${ShortLinkGroupsFields.ID.fieldName} 
+            FROM ${TableName.SHORTLINK_GROUPS} 
+            WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?
+        ) 
+        AND ${ShortLinksField.CODE.fieldName} = ?
+        AND (${ShortLinksField.OWNER.fieldName} = ? OR ${ShortLinksField.OWNER.fieldName} = ?)
     """.trimIndent()
     val numDeleted =
       write(sql) {

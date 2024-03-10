@@ -4,7 +4,7 @@ object Database {
   object DbFields {
     enum class ShortLinks(val fieldName: String) {
       ID("id"),
-      GROUP("grp"),
+      GROUP_ID("group_id"),
       OWNER("owner"),
       CREATOR("creator"),
       CODE("code"),

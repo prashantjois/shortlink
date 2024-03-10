@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="eddbf08e-21c9-4f4a-bcd3-b561a368cc08" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shortlink-store-jdbc/src/main/kotlin/ca/jois/shortlink/persistence/DbFields.kt" beforeDir="false" afterPath="$PROJECT_DIR$/shortlink-store-jdbc/src/main/kotlin/ca/jois/shortlink/persistence/DbFields.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shortlink-store-jdbc/src/main/kotlin/ca/jois/shortlink/persistence/ShortLinkStoreJdbc.kt" beforeDir="false" afterPath="$PROJECT_DIR$/shortlink-store-jdbc/src/main/kotlin/ca/jois/shortlink/persistence/ShortLinkStoreJdbc.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shortlink-store-jdbc/src/test/kotlin/ca/jois/shortlink/persistence/testhelpers/TestDatabase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/shortlink-store-jdbc/src/test/kotlin/ca/jois/shortlink/persistence/testhelpers/TestDatabase.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shortlink-store-jdbc/src/test/resources/mysql-init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/shortlink-store-jdbc/src/test/resources/mysql-init.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shortlink-store-jdbc/src/test/resources/postgresql-init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/shortlink-store-jdbc/src/test/resources/postgresql-init.sql" afterDir="false" />
     </list>
@@ -19,6 +21,16 @@
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
     </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view />
+      </state>
+    </system>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -41,7 +53,12 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Gradle.Build shortlink.executor": "Run",
+    "Gradle.ShortLinkStoreMysqlTest.executor": "Run",
+    "Gradle.ShortLinkStorePostgresTest.executor": "Run",
     "Gradle.shortlink [ktfmtFormat].executor": "Run",
+    "Gradle.shortlink [test].executor": "Run",
+    "JUnit.ShortLinkStoreMysqlTest.Existing entry should be updated with modified parameters.executor": "Run",
+    "JUnit.ShortLinkStoreMysqlTest.list by owners should get all the shortlinks for a given owner.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
@@ -53,9 +70,10 @@
   <component name="RunAnythingCache">
     <option name="myCommands">
       <command value="gradle ktfmtFormat" />
+      <command value="gradle test" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.ShortLinkStoreMysqlTest">
+  <component name="RunManager" selected="Gradle.shortlink [test]">
     <configuration name="ShortLinkStoreMysqlTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -80,7 +98,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="shortlink [ktfmtFormat]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ShortLinkStorePostgresTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -91,7 +109,31 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="ktfmtFormat" />
+            <option value=":shortlink-store-jdbc:test" />
+            <option value="--tests" />
+            <option value="&quot;ca.jois.shortlink.persistence.ShortLinkStorePostgresTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="shortlink [test]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="test" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -102,10 +144,45 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
+    <configuration name="ShortLinkStoreMysqlTest.Existing entry should be updated with modified parameters" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="shortlink.shortlink-store-jdbc.test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="ca.jois.shortlink.persistence.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="ca.jois.shortlink.persistence" />
+      <option name="MAIN_CLASS_NAME" value="ca.jois.shortlink.persistence.ShortLinkStoreMysqlTest" />
+      <option name="METHOD_NAME" value="Existing entry should be updated with modified parameters" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ShortLinkStoreMysqlTest.list by owners should get all the shortlinks for a given owner" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="shortlink.shortlink-store-jdbc.test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="ca.jois.shortlink.persistence.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="ca.jois.shortlink.persistence" />
+      <option name="MAIN_CLASS_NAME" value="ca.jois.shortlink.persistence.ShortLinkStoreMysqlTest" />
+      <option name="METHOD_NAME" value="list by owners should get all the shortlinks for a given owner" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.shortlink [test]" />
+        <item itemvalue="Gradle.ShortLinkStorePostgresTest" />
         <item itemvalue="Gradle.ShortLinkStoreMysqlTest" />
-        <item itemvalue="Gradle.shortlink [ktfmtFormat]" />
+        <item itemvalue="JUnit.ShortLinkStoreMysqlTest.Existing entry should be updated with modified parameters" />
+        <item itemvalue="JUnit.ShortLinkStoreMysqlTest.Existing entry should be updated with modified parameters" />
       </list>
     </recent_temporary>
   </component>
@@ -119,5 +196,24 @@
       <updated>1710092948485</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/shortlink-store-testing/src/main/kotlin/ca/jois/shortlink/persistence/ShortLinkStoreTest.kt</url>
+          <line>195</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/shortlink-store-testing/src/main/kotlin/ca/jois/shortlink/persistence/ShortLinkStoreTest.kt</url>
+          <line>201</line>
+          <properties>
+            <option name="lambda-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

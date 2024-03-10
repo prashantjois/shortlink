@@ -5,6 +5,7 @@ import ca.jois.shortlink.model.ShortLink
 import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
 import ca.jois.shortlink.persistence.Database.DbFields
+import ca.jois.shortlink.persistence.Database.TableName
 import ca.jois.shortlink.testhelpers.factory.ShortLinkFactory
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -14,7 +15,9 @@ import org.testcontainers.containers.MySQLContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.net.URL
-import java.sql.PreparedStatement
+import java.sql.Connection
+import ca.jois.shortlink.persistence.Database.DbFields.ShortLinkGroups as ShortLinkGroupsFields
+import ca.jois.shortlink.persistence.Database.DbFields.ShortLinks as ShortLinksField
 
 /**
  * Helpers with factory methods, extension methods and other helpers to aid in testing against test
@@ -52,15 +55,21 @@ object TestDatabase {
     code: ShortCode,
     group: ShortLinkGroup
   ): ShortLink? {
-    val selectSql =
-      "SELECT * FROM shortlinks WHERE ${DbFields.ShortLinks.CODE.fieldName} = ? AND ${DbFields.ShortLinks.GROUP.fieldName} = ?"
+    val selectSql = """
+      SELECT * 
+      FROM ${TableName.SHORTLINKS} s
+      INNER JOIN ${TableName.SHORTLINK_GROUPS} g
+      ON s.${ShortLinksField.GROUP_ID.fieldName} = g.${ShortLinkGroupsFields.ID.fieldName}
+      WHERE 1=1
+        AND ${ShortLinksField.CODE.fieldName} = ?
+        AND ${ShortLinkGroupsFields.NAME.fieldName} = ?
+    """.trimIndent()
 
     val connection = HikariDataSource(hikariConfig()).connection
-    val stmt: PreparedStatement =
-      connection.prepareStatement(selectSql).apply {
-        setString(1, code.value)
-        setString(2, group.name)
-      }
+    val stmt = connection.prepareStatement(selectSql).apply {
+      setString(1, code.value)
+      setString(2, group.name)
+    }
 
     stmt.executeQuery().let { rs ->
       if (!rs.next()) {
@@ -79,7 +88,7 @@ object TestDatabase {
         expiresAt = expiresAt,
         creator = ShortLinkUser(rs.getString(DbFields.ShortLinks.CREATOR.fieldName)),
         owner = ShortLinkUser(rs.getString(DbFields.ShortLinks.OWNER.fieldName)),
-        group = ShortLinkGroup(rs.getString(DbFields.ShortLinks.GROUP.fieldName)),
+        group = ShortLinkGroup(rs.getString(DbFields.ShortLinks.GROUP_ID.fieldName)),
       )
     }
   }
@@ -91,21 +100,29 @@ object TestDatabase {
   fun JdbcDatabaseContainer<*>.createShortLinkDirect(
     shortLink: ShortLink = ShortLinkFactory.build()
   ): ShortLink {
-    val fieldNames =
-      listOf(
-        DbFields.ShortLinks.GROUP,
-        DbFields.ShortLinks.CODE,
-        DbFields.ShortLinks.URL,
-        DbFields.ShortLinks.CREATED_AT,
-        DbFields.ShortLinks.EXPIRES_AT,
-        DbFields.ShortLinks.CREATOR,
-        DbFields.ShortLinks.OWNER,
-      )
-        .joinToString(", ") { it.fieldName }
-
-    val insertSql = "INSERT INTO shortlinks ($fieldNames) VALUES (?, ?, ?, ?, ?, ?, ?)"
-
     val connection = HikariDataSource(hikariConfig()).connection
+    upsertGroup(connection, shortLink.group)
+    val insertSql = """
+        INSERT INTO ${TableName.SHORTLINKS} (
+            ${ShortLinksField.GROUP_ID.fieldName},
+            ${ShortLinksField.CODE.fieldName},
+            ${ShortLinksField.URL.fieldName},
+            ${ShortLinksField.CREATED_AT.fieldName},
+            ${ShortLinksField.EXPIRES_AT.fieldName},
+            ${ShortLinksField.CREATOR.fieldName},
+            ${ShortLinksField.OWNER.fieldName}
+        )
+        VALUES (
+          (SELECT ID FROM ${TableName.SHORTLINK_GROUPS} WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?),
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
+      """.trimIndent()
+
     connection
       .prepareStatement(insertSql)
       .apply {
@@ -116,8 +133,7 @@ object TestDatabase {
         shortLink.expiresAt?.let { setLong(5, it) } ?: setNull(5, java.sql.Types.BIGINT)
         setString(6, shortLink.creator.identifier)
         setString(7, shortLink.owner.identifier)
-      }
-      .executeUpdate()
+      }.executeUpdate()
 
     return shortLink
   }
@@ -128,5 +144,34 @@ object TestDatabase {
       it.username = username
       it.password = password
     }
+  }
+
+  private fun upsertGroup(connection: Connection, group: ShortLinkGroup) {
+    val selectSql = """
+      SELECT ${ShortLinkGroupsFields.ID.fieldName} 
+      FROM ${TableName.SHORTLINK_GROUPS} 
+      WHERE ${ShortLinkGroupsFields.NAME.fieldName} = ?
+    """.trimIndent()
+
+    val selectResults = connection
+      .prepareStatement(selectSql)
+      .apply {
+        setString(1, group.name)
+      }.executeQuery()
+
+    if (selectResults.next()) return
+
+    val insertSql = """
+      INSERT INTO ${TableName.SHORTLINK_GROUPS}
+      (${ShortLinkGroupsFields.NAME.fieldName}) 
+      VALUES
+      (?)
+    """.trimIndent()
+
+    connection
+      .prepareStatement(insertSql)
+      .apply {
+        setString(1, group.name)
+      }.executeUpdate()
   }
 }

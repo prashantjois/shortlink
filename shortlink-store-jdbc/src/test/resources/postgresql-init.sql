@@ -1,6 +1,6 @@
 CREATE TABLE shortlinks (
   id SERIAL PRIMARY KEY,
-  grp VARCHAR NOT NULL,
+  group_id INTEGER NOT NULL,
   code VARCHAR NOT NULL,
   owner VARCHAR NOT NULL,
   creator VARCHAR NOT NULL,
@@ -8,5 +8,10 @@ CREATE TABLE shortlinks (
   created_at BIGINT NOT NULL,
   expires_at BIGINT,
 
-  CONSTRAINT grp_code_unique UNIQUE (grp, code)
+  CONSTRAINT group_code_unique UNIQUE (group_id, code)
+);
+
+CREATE TABLE shortlink_groups (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE
 );
