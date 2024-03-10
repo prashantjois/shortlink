@@ -84,12 +84,14 @@ interface ShortLinkStoreTest {
                 it.nextPageKey
             }
 
-        shortLinkStore.listByGroupAndOwner(group, owner, limit = 3, paginationKey = paginationKey).let {
-            assertThat(it.entries).hasSize(2)
-            assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
-            assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
-            assertThat(it.nextPageKey).isNull()
-        }
+        shortLinkStore
+            .listByGroupAndOwner(group, owner, limit = 3, paginationKey = paginationKey)
+            .let {
+                assertThat(it.entries).hasSize(2)
+                assertThat(shortLinksForOwner).contains(*it.entries.toTypedArray())
+                assertThat(otherShortLinks).doesNotContain(*it.entries.toTypedArray())
+                assertThat(it.nextPageKey).isNull()
+            }
     }
 
     @Test

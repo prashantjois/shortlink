@@ -12,8 +12,8 @@ interface ShortLinkStore {
      * A generic container for a paginated result of entries.
      *
      * @param T The type of entry being paginated.
-     * @param nextPageKey A key that can be used to retrieve the next page of short links. If
-     *   null, indicates there are no additional pages.
+     * @param nextPageKey A key that can be used to retrieve the next page of short links. If null,
+     *   indicates there are no additional pages.
      */
     data class PaginatedResult<T>(val entries: List<T>, val nextPageKey: String?)
 
@@ -21,7 +21,12 @@ interface ShortLinkStore {
      * Retrieves all [ShortLink] entries in the store that are owned by the given [owner] in a
      * paginated manner.
      *
+     * @param group The group of the short links to retrieve.
      * @param owner The owner of the short links to retrieve.
+     * @param paginationKey A key that can be used to retrieve the next page of short links. If this
+     *   value is null, the first page of short links will be retrieved. Subsequent pages can be
+     *   retrieved by passing the value returned in the [PaginatedResult.nextPageKey] field of the
+     *   previous result.
      */
     suspend fun listByGroupAndOwner(
         group: ShortLinkGroup,
