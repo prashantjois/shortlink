@@ -44,7 +44,7 @@ interface ShortLinkManager {
     url: URL,
     expiresAt: Long? = null,
     creator: ShortLinkUser = ShortLinkUser.ANONYMOUS,
-    group: ShortLinkGroup = ShortLinkGroup.DEFAULT,
+    group: ShortLinkGroup = ShortLinkGroup.UNGROUPED,
   ): ShortLink
 
   /**

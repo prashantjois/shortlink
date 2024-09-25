@@ -48,7 +48,7 @@ interface ShortLinkStoreTest {
 
   @Test
   fun `list by owners should get all the shortlinks for a given owner`() = runTest {
-    val group = ShortLinkGroup.DEFAULT
+    val group = ShortLinkGroup.UNGROUPED
     val owner = ShortLinkUser("Someone")
     val shortLinksForOwner =
       (1..5).map { createDirect(ShortLinkFactory.build(group = group, owner = owner)) }
@@ -70,7 +70,7 @@ interface ShortLinkStoreTest {
 
   @Test
   fun `list by owners should return paginated results`() = runTest {
-    val group = ShortLinkGroup.DEFAULT
+    val group = ShortLinkGroup.UNGROUPED
     val owner = ShortLinkUser("Someone")
     val shortLinksForOwner = (1..5).map { createDirect(ShortLinkFactory.build(owner = owner)) }
     val otherShortLinks = (1..5).map { createDirect(ShortLinkFactory.build()) }
@@ -217,7 +217,7 @@ interface ShortLinkStoreTest {
         shortLinkStore.update(
           ShortCode("Something"),
           url = UrlFactory.random(),
-          group = ShortLinkGroup.DEFAULT,
+          group = ShortLinkGroup.UNGROUPED,
           updater = ShortLinkUser.ANONYMOUS,
         )
       }
@@ -279,7 +279,7 @@ interface ShortLinkStoreTest {
         shortLinkStore.update(
           ShortCode("Something"),
           url = UrlFactory.random(),
-          group = ShortLinkGroup.DEFAULT,
+          group = ShortLinkGroup.UNGROUPED,
           updater = ShortLinkUser.ANONYMOUS,
         )
       }
@@ -287,7 +287,7 @@ interface ShortLinkStoreTest {
         shortLinkStore.update(
           ShortCode("Something"),
           url = UrlFactory.random(),
-          group = ShortLinkGroup.DEFAULT,
+          group = ShortLinkGroup.UNGROUPED,
           updater = ShortLinkUser("Someone Else"),
         )
       }
@@ -300,7 +300,7 @@ interface ShortLinkStoreTest {
 
     shortLinkStore.delete(
       code,
-      group = ShortLinkGroup.DEFAULT,
+      group = ShortLinkGroup.UNGROUPED,
       deleter = ShortLinkUser.ANONYMOUS,
     )
 
@@ -313,7 +313,7 @@ interface ShortLinkStoreTest {
       assertExceptionThrown(NotFoundOrNotPermittedException::class) {
         shortLinkStore.delete(
           ShortCode("Missing"),
-          group = ShortLinkGroup.DEFAULT,
+          group = ShortLinkGroup.UNGROUPED,
           deleter = ShortLinkUser.ANONYMOUS,
         )
       }
@@ -328,14 +328,14 @@ interface ShortLinkStoreTest {
       assertExceptionThrown(NotFoundOrNotPermittedException::class) {
         shortLinkStore.delete(
           ShortCode("Missing"),
-          group = ShortLinkGroup.DEFAULT,
+          group = ShortLinkGroup.UNGROUPED,
           deleter = ShortLinkUser.ANONYMOUS,
         )
       }
       assertExceptionThrown(NotFoundOrNotPermittedException::class) {
         shortLinkStore.delete(
           ShortCode("Missing"),
-          group = ShortLinkGroup.DEFAULT,
+          group = ShortLinkGroup.UNGROUPED,
           deleter = ShortLinkUser("Someone Else"),
         )
       }

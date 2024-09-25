@@ -28,7 +28,7 @@ class ShortLinkApiServiceTest {
   @Test
   fun `GET#list retrieves all shortlinks`() = runTest {
     with(server) {
-      val group = ShortLinkGroup.DEFAULT
+      val group = ShortLinkGroup.UNGROUPED
       val owner = ShortLinkUser("user")
       val shortLinks =
         (1..5).map { server.shortLinkStore.create(ShortLinkFactory.build(owner = owner)) }

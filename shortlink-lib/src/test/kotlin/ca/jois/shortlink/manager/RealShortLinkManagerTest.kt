@@ -29,7 +29,7 @@ class RealShortLinkManagerTest {
             shortCodeGenerator = NaiveShortCodeGenerator(),
             shortLinkStore = shortLinkStore,
           )
-        val group = ShortLinkGroup.DEFAULT
+        val group = ShortLinkGroup.UNGROUPED
         val user = ShortLinkUser("user")
         val shortLinks = (1..5).map { ShortLinkFactory.build(owner = user) }
         shortLinks.forEach { shortLinkStore.create(it) }
@@ -95,7 +95,7 @@ class RealShortLinkManagerTest {
 
     @Test
     fun `it should return null if the code does not exist`() {
-      assertThat(realShortLinkManager.get(ShortCode("random"), ShortLinkGroup.DEFAULT))
+      assertThat(realShortLinkManager.get(ShortCode("random"), ShortLinkGroup.UNGROUPED))
         .isNull()
     }
 

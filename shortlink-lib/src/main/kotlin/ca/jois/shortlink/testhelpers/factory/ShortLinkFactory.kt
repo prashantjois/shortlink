@@ -10,13 +10,13 @@ import java.net.URL
 object ShortLinkFactory {
   /** Generates a [ShortLink] with the given parameters, choosing defaults if not specified. */
   fun build(
-    code: ShortCode = NaiveShortCodeGenerator().generate(),
-    group: ShortLinkGroup = ShortLinkGroup.DEFAULT,
-    creator: ShortLinkUser = ShortLinkUser.ANONYMOUS,
-    owner: ShortLinkUser = creator,
-    originalUrl: URL = UrlFactory.random(),
-    createdAt: Long = 0,
-    expiresAt: Long? = null,
+      code: ShortCode = NaiveShortCodeGenerator().generate(),
+      group: ShortLinkGroup = ShortLinkGroup.UNGROUPED,
+      creator: ShortLinkUser = ShortLinkUser.ANONYMOUS,
+      owner: ShortLinkUser = creator,
+      originalUrl: URL = UrlFactory.random(),
+      createdAt: Long = 0,
+      expiresAt: Long? = null,
   ) =
     ShortLink(
       group = group,

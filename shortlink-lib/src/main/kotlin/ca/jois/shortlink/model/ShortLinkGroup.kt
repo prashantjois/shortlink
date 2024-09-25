@@ -10,6 +10,6 @@ package ca.jois.shortlink.model
 data class ShortLinkGroup(val name: String) {
   companion object {
     /** The default group for short links. */
-    val DEFAULT = ShortLinkGroup("GROUP_f4811e5d27094b7b8d7520183ee14e73")
+    val UNGROUPED = ShortLinkGroup("UNGROUPED")
   }
 }
