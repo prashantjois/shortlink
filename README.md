@@ -7,14 +7,23 @@ of interfaces to generate short codes, manage short link lifecycles, and persist
 
 ### Model
 
+#### ShortLink
 `ShortLink` is the core data model in the library. It includes:
 
 * `code`: A unique identifier for the shortened URL.
 * `url`: The original URL being shortened.
 * `createdAt`: The timestamp when the short link was created.
+* `group`: (Optional) The group the short link belongs to (default is group named `UNGROUPED`)
 * `expiresAt`: (Optional) The timestamp when the short link expires
 * `creator`: (Optional) The user who created the short link.
 * `owner`: (Optional) The user who is allowed to modify the short link.
+
+
+#### ShortLinkGroup
+`ShortLinkGroup` allows you to scope shortlinks to a group. This is useful for multi-tenancy or other use cases where you want to isolate shortlinks.
+It includes:
+
+* `name`: A human-readable name for the group.
 
 ### Generator
 
@@ -100,5 +109,6 @@ manager.delete(ShortLinkUser("username"), shortLink.code)
 
 ### Web Server
 
-A simple web server is provided to illustrate how you could build HTTP APIs against
+A simple web server is provided that exposes the functionality of the shortlink library via RESTful endpoints. 
+
 Run the `main()` function in `App.kt` in the [shortlink-app](shortlink-app/README.md) module.
