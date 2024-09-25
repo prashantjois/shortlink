@@ -32,6 +32,24 @@ interface ShortLinkManager {
   ): PaginatedResult<ShortLink>
 
   /**
+   *  Create a new short link for the given URL with the provided short code.
+   *
+   * @param shortCode The short code to be used for the short link.
+   * @param url The URL to be shortened.
+   * @param expiresAt An optional expiration timestamp for the short link (in milliseconds since
+   *   epoch). If not provided, the code will not expire.
+   * @param creator An optional user who created the short link.
+   * @return The created [ShortLink] object representing the shortened URL.
+   */
+  fun create(
+    shortCode: ShortCode,
+    url: URL,
+    expiresAt: Long? = null,
+    creator: ShortLinkUser = ShortLinkUser.ANONYMOUS,
+    group: ShortLinkGroup = ShortLinkGroup.UNGROUPED,
+  ): ShortLink
+
+  /**
    * Creates a new short link for the given URL.
    *
    * @param url The URL to be shortened.

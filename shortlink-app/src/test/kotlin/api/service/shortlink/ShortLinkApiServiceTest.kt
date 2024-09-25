@@ -1,6 +1,7 @@
 package api.service.shortlink
 
 import api.service.TestWebServer
+import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
 import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
@@ -44,6 +45,27 @@ class ShortLinkApiServiceTest {
         "/listByOwner",
       ) {
         assertThat(it!!.entries).containsExactlyInAnyOrderElementsOf(shortLinks)
+      }
+    }
+  }
+
+  @Test
+  fun `POST#create creates a new shortlink with a specific code`() = runTest {
+    with(server) {
+      with(clock) {
+        val code = "myCode"
+        val request =
+          CreateShortLinkAction.Request(
+            code = code,
+            creator = "user",
+            group = "group",
+            url = "https://example.com",
+          )
+
+        post<CreateShortLinkAction.Request, ShortLink>(request, "/create") {
+          assertThat(it!!).isNotNull
+          assertThat(server.shortLinkStore.get(ShortCode(code), it.group)).isEqualTo(it)
+        }
       }
     }
   }

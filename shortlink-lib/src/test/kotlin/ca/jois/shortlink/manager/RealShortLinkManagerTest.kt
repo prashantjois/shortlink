@@ -54,6 +54,29 @@ class RealShortLinkManagerTest {
             shortLinkStore = shortLinkStore,
           )
         val url = UrlFactory.random()
+        val shortCode = ShortCode("myCode")
+        val shortLink =
+          realShortLinkManager.create(
+            shortCode = shortCode,
+            creator = ShortLinkUser("user"),
+            url = url,
+            expiresAt = 5.minutes.fromNow().toEpochMilli(),
+          )
+        val createdShortLink = shortLinkStore.get(shortCode, shortLink.group)
+        assertThat(createdShortLink).isEqualTo(shortLink)
+      }
+    }
+
+    @Test
+    fun `ShortLink is created with the provided params with an automatic short code`() = runTest {
+      with(TestClock()) {
+        val shortLinkStore = ShortLinkStoreFake()
+        val realShortLinkManager =
+          RealShortLinkManager(
+            shortCodeGenerator = NaiveShortCodeGenerator(),
+            shortLinkStore = shortLinkStore,
+          )
+        val url = UrlFactory.random()
         val shortLink =
           realShortLinkManager.create(
             creator = ShortLinkUser("user"),

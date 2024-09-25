@@ -25,12 +25,12 @@ class RealShortLinkManager(
   }
 
   override fun create(
+    shortCode: ShortCode,
     url: URL,
     expiresAt: Long?,
     creator: ShortLinkUser,
     group: ShortLinkGroup
   ): ShortLink {
-    val shortCode = shortCodeGenerator.generate()
     val now = millis()
     val shortLink =
       ShortLink(
@@ -45,6 +45,13 @@ class RealShortLinkManager(
 
     return runBlocking { shortLinkStore.create(shortLink) }
   }
+
+  override fun create(
+    url: URL,
+    expiresAt: Long?,
+    creator: ShortLinkUser,
+    group: ShortLinkGroup
+  ): ShortLink = create(shortCodeGenerator.generate(), url, expiresAt, creator, group)
 
   override fun get(code: ShortCode, group: ShortLinkGroup) = runBlocking {
     shortLinkStore.get(code, group)
