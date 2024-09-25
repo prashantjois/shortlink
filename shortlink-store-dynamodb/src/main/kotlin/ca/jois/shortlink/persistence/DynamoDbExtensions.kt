@@ -50,8 +50,8 @@ object DynamoDbExtensions {
     return listOf(group.name, code.value).joinToString(DyShortLinkItem.DELIMITER)
   }
 
-  fun groupOwnerString(owner: ShortLinkUser, group: ShortLinkGroup): String {
-    return listOf(group.name, owner.identifier).joinToString(DyShortLinkItem.DELIMITER)
+  fun groupOwnerKeyString(owner: ShortLinkUser, groupId: ShortLinkGroup): String {
+    return listOf(groupId.name, owner.identifier).joinToString(DyShortLinkItem.DELIMITER)
   }
 
   val ShortLink.partitionKeyString: String
@@ -61,6 +61,6 @@ object DynamoDbExtensions {
 
   val ShortLink.groupOwnerString: String
     get() {
-      return groupOwnerString(owner, group)
+      return groupOwnerKeyString(owner, group)
     }
 }

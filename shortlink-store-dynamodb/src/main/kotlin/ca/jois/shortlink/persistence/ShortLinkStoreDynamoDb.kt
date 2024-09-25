@@ -4,7 +4,7 @@ import ca.jois.shortlink.model.ShortCode
 import ca.jois.shortlink.model.ShortLink
 import ca.jois.shortlink.model.ShortLinkGroup
 import ca.jois.shortlink.model.ShortLinkUser
-import ca.jois.shortlink.persistence.DynamoDbExtensions.groupOwnerString
+import ca.jois.shortlink.persistence.DynamoDbExtensions.groupOwnerKeyString
 import ca.jois.shortlink.persistence.DynamoDbExtensions.partitionKeyString
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toDyShortLinkItem
 import ca.jois.shortlink.persistence.DynamoDbExtensions.toKey
@@ -43,8 +43,14 @@ import java.time.Clock
 class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
   private val client = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build()
 
-  private val table =
+  private val shortLinksTable =
     client.table(DyShortLinkItem.TABLE_NAME, TableSchema.fromBean(DyShortLinkItem::class.java))
+
+  private val shortLinkGroupsTable =
+    client.table(
+      DyShortLinkGroupItem.TABLE_NAME,
+      TableSchema.fromBean(DyShortLinkGroupItem::class.java),
+    )
 
   override suspend fun listByGroupAndOwner(
     group: ShortLinkGroup,
@@ -52,21 +58,20 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
     paginationKey: String?,
     limit: Int?,
   ): PaginatedResult<ShortLink> {
-    val page =
-      table
-        .index(DyShortLinkItem.Indexes.GSI.GROUP_OWNER_INDEX)
-        .query { builder ->
-          builder.queryConditional(
-            QueryConditional.keyEqualTo(groupOwnerString(owner, group).toKey()),
+    val page = shortLinksTable
+      .index(DyShortLinkItem.Indexes.GSI.GROUP_OWNER_INDEX)
+      .query { builder ->
+        builder.queryConditional(
+          QueryConditional.keyEqualTo(groupOwnerKeyString(owner, group).toKey()),
+        )
+        paginationKey?.let {
+          builder.exclusiveStartKey(
+            ListByOwnerPaginationKey.decode(it).toExclusiveStartKey(),
           )
-          paginationKey?.let {
-            builder.exclusiveStartKey(
-              ListByOwnerPaginationKey.decode(it).toExclusiveStartKey(),
-            )
-          }
-          limit?.let { builder.limit(it) }
         }
-        .firstOrNull() ?: return PaginatedResult(emptyList(), null)
+        limit?.let { builder.limit(it) }
+      }
+      .firstOrNull() ?: return PaginatedResult(emptyList(), null)
 
     val shortLinks = page.items().map { it.toShortLink() }
     val nextPaginationKey =
@@ -78,10 +83,10 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
     shortLink.owner.identifier.let {
       require(!it.contains(DyShortLinkItem.DELIMITER)) { "Invalid owner identifier: $it" }
     }
-    table.getItem(shortLink.partitionKeyString.toKey())?.let {
+    shortLinksTable.getItem(shortLink.partitionKeyString.toKey())?.let {
       throw ShortLinkStore.DuplicateShortCodeException(shortLink.group, shortLink.code)
     }
-    table.putItem(shortLink.toDyShortLinkItem())
+    shortLinksTable.putItem(shortLink.toDyShortLinkItem())
     return shortLink
   }
 
@@ -91,7 +96,7 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
     group: ShortLinkGroup,
     excludeExpired: Boolean
   ): ShortLink? {
-    val item = table.getItem(partitionKeyString(code, group).toKey()) ?: return null
+    val item = shortLinksTable.getItem(partitionKeyString(code, group).toKey()) ?: return null
     val shortLink = item.toShortLink()
     if (excludeExpired && shortLink.isExpired()) {
       return null
@@ -120,25 +125,43 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
     update: (ShortLink) -> ShortLink
   ) {
     val existing =
-      table.getItem(partitionKeyString(code, group).toKey())
+      shortLinksTable.getItem(partitionKeyString(code, group).toKey())
         ?: throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
 
     val shortLink = existing.toShortLink()
     if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != updater) {
       throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
     }
-    table.putItem(update(shortLink).toDyShortLinkItem(existing.version))
+    shortLinksTable.putItem(update(shortLink).toDyShortLinkItem(existing.version))
   }
 
   override suspend fun delete(code: ShortCode, group: ShortLinkGroup, deleter: ShortLinkUser) {
     val key = partitionKeyString(code, group).toKey()
     val item =
-      table.getItem(key) ?: throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
+      shortLinksTable.getItem(key) ?: throw ShortLinkStore.NotFoundOrNotPermittedException(
+        group,
+        code,
+      )
     val shortLink = item.toShortLink()
     if (shortLink.owner != ShortLinkUser.ANONYMOUS && shortLink.owner != deleter) {
       throw ShortLinkStore.NotFoundOrNotPermittedException(group, code)
     }
-    table.deleteItem(key)
+    shortLinksTable.deleteItem(key)
+  }
+
+  private fun getGroupId(group: ShortLinkGroup): ShortLinkGroup {
+    return shortLinkGroupsTable.index(DyShortLinkGroupItem.Indexes.GSI.GROUP_NAME_INDEX)
+      .query { builder ->
+        builder.queryConditional(
+          QueryConditional.keyEqualTo(group.name.toKey()),
+        )
+      }
+      .firstOrNull()
+      ?.items()
+      ?.firstOrNull()
+      ?.partition_key
+      ?.let { ShortLinkGroup(it) }
+      ?: throw GroupNotFoundException(group)
   }
 
   /**
@@ -164,4 +187,7 @@ class ShortLinkStoreDynamoDb(dynamoDbClient: DynamoDbClient) : ShortLinkStore {
       return keys.associateWith { AttributeValue.fromS(lastEvaluatedKey[it]!!.s()) }
     }
   }
+
+  class GroupNotFoundException(group: ShortLinkGroup) :
+    RuntimeException("Group not found: ${group.name}")
 }
